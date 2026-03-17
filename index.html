@@ -8,19 +8,34 @@
 </head>
 <body>
     <div class="login-container">
+        <!-- Login Box -->
         <div class="login-box">
             <h1>Zeiterfassung</h1>
             <p class="subtitle">Schulanwesenheit Tracking</p>
 
-            <form id="loginForm" onsubmit="handleLogin(event)">
+            <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
                 <div class="form-group">
                     <label for="username">Benutzername:</label>
-                    <input type="text" id="username" name="username" required placeholder="Dein Benutzername">
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        required
+                        placeholder="Dein Benutzername"
+                        autocomplete="off"
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="password">Passwort:</label>
-                    <input type="password" id="password" name="password" required placeholder="Dein Passwort">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        placeholder="Dein Passwort"
+                        autocomplete="off"
+                    >
                 </div>
 
                 <button type="submit" class="btn-login">Anmelden</button>
@@ -40,21 +55,42 @@
             <form id="registerForm" onsubmit="handleRegister(event)">
                 <div class="form-group">
                     <label for="newUsername">Benutzername:</label>
-                    <input type="text" id="newUsername" name="newUsername" required placeholder="Wähle einen Benutzernamen">
+                    <input
+                        type="text"
+                        id="newUsername"
+                        name="newUsername"
+                        required
+                        placeholder="Wähle einen Benutzernamen"
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="newPassword">Passwort:</label>
-                    <input type="password" id="newPassword" name="newPassword" required placeholder="Wähle ein Passwort (min. 6 Zeichen)">
+                    <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        required
+                        placeholder="Wähle ein Passwort (min. 6 Zeichen)"
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="confirmPassword">Passwort bestätigen:</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Bestätige dein Passwort">
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        required
+                        placeholder="Bestätige dein Passwort"
+                    >
                 </div>
 
-                <div class="form-info" style="background: #e8f4f8; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #004085;">
-                    <strong>ℹ️ Hinweis:</strong> Dies ist die Standardanmeldung für Cursanten. Admin-Konten können nur von bestehenden Administratoren erstellt werden.
+                <div class="form-info"
+                     style="background: #e8f4f8; padding: 10px; border-radius: 6px;
+                            margin-bottom: 15px; font-size: 13px; color: #004085;">
+                        <strong>Hinweis:</strong> Der Benutzername entspricht deinem Namen,
+                        zum Beispiel <strong>Vorname Nachname</strong>.
                 </div>
 
                 <button type="submit" class="btn-login">Konto erstellen</button>
@@ -71,7 +107,10 @@
         <footer class="page-footer">
             <p>Erstellt von Daniel-Cosmin Rogoz</p>
             <p style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 10px;">
-                <a href="setup.html" style="color: rgba(255, 255, 255, 0.4); text-decoration: none;">Setup</a>
+                <a href="setup.html"
+                   style="color: rgba(255, 255, 255, 0.4); text-decoration: none;">
+                    Setup
+                </a>
             </p>
         </footer>
     </div>

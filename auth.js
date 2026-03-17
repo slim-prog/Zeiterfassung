@@ -165,13 +165,11 @@ function handleLogin(event) {
 }
 
 // Handle Logout
+// Handle Logout
 function handleLogout() {
+    // eingeloggten Benutzer entfernen
     localStorage.removeItem('currentUser');
-    // Clear form fields
-    const usernameField = document.getElementById('username');
-    const passwordField = document.getElementById('password');
-    if (usernameField) usernameField.value = '';
-    if (passwordField) passwordField.value = '';
+    // nur Redirect – das Leeren der Felder übernimmt ein eigener Handler
     window.location.href = 'index.html';
 }
 
@@ -218,6 +216,7 @@ function hasPermission(user, permission) {
 }
 
 // Check if user is logged in
+// Check if user is logged in
 window.addEventListener('load', () => {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     const currentUserStr = localStorage.getItem('currentUser');
@@ -226,19 +225,34 @@ window.addEventListener('load', () => {
     // Protected pages check
     if ((currentPage === 'dashboard.html' || currentPage === 'admin.html') && !currentUser) {
         window.location.href = 'index.html';
+        return;
     }
 
     // Check role-based access
     if (currentPage === 'admin.html' && currentUser && currentUser.role !== 'admin') {
         window.location.href = 'dashboard.html';
+        return;
     }
 
+    // Wenn bereits eingeloggt, nicht wieder Login-Seite zeigen
     if ((currentPage === 'index.html' || currentPage === '') && currentUser) {
-        // Redirect to appropriate page based on role
         if (currentUser.role === 'admin') {
             window.location.href = 'admin.html';
         } else {
             window.location.href = 'dashboard.html';
+        }
+        return;
+    }
+
+    // Login-Seite: Formular immer leeren (auch nach Logout)
+    if (currentPage === 'index.html' || currentPage === '') {
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.reset();
+            const usernameField = document.getElementById('username');
+            const passwordField = document.getElementById('password');
+            if (usernameField) usernameField.value = '';
+            if (passwordField) passwordField.value = '';
         }
     }
 
