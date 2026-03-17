@@ -529,9 +529,7 @@ Anschließend Datei speichern und ggf. neu testen.
 
 ## Support und Kontakt
 
-Bei Fragen oder Problemen:
-
-- Datenschutz: datenschutz@dr.com  
+Bei Fragen oder Problemen:  
 - Entwicklung: Daniel Rogoz danielrogoz@dr.com
 
 Dokumentversion: 1.0  
