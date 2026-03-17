@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeiterfassung - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Zeiterfassung</h1>
+            <p class="subtitle">Schulanwesenheit Tracking</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Benutzername:</label>
+                    <input type="text" id="username" name="username" required placeholder="Dein Benutzername">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Passwort:</label>
+                    <input type="password" id="password" name="password" required placeholder="Dein Passwort">
+                </div>
+
+                <button type="submit" class="btn-login">Anmelden</button>
+            </form>
+
+            <div class="form-toggle">
+                <p>Kein Konto? <a href="#" onclick="showRegister()">Registrieren</a></p>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+
+        <!-- Register Form (hidden by default) -->
+        <div id="registerBox" class="login-box hidden">
+            <h1>Neues Konto erstellen</h1>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="newUsername">Benutzername:</label>
+                    <input type="text" id="newUsername" name="newUsername" required placeholder="Wähle einen Benutzernamen">
+                </div>
+
+                <div class="form-group">
+                    <label for="newPassword">Passwort:</label>
+                    <input type="password" id="newPassword" name="newPassword" required placeholder="Wähle ein Passwort (min. 6 Zeichen)">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Passwort bestätigen:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Bestätige dein Passwort">
+                </div>
+
+                <div class="form-info" style="background: #e8f4f8; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #004085;">
+                    <strong>ℹ️ Hinweis:</strong> Dies ist die Standardanmeldung für Cursanten. Admin-Konten können nur von bestehenden Administratoren erstellt werden.
+                </div>
+
+                <button type="submit" class="btn-login">Konto erstellen</button>
+            </form>
+
+            <div class="form-toggle">
+                <p>Hast du ein Konto? <a href="#" onclick="showLogin()">Anmelden</a></p>
+            </div>
+
+            <div id="registerErrorMessage" class="error-message"></div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="page-footer">
+            <p>Erstellt von Daniel-Cosmin Rogoz</p>
+            <p style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 10px;">
+                <a href="setup.html" style="color: rgba(255, 255, 255, 0.4); text-decoration: none;">Setup</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

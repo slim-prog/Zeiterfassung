@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeiterfassung - Quick Start</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #667eea; }
+        .box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+        .button:hover { background: #764ba2; }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>⏰ Zeiterfassung - Schnellstart</h1>
+
+    <div class="box">
+        <h2>🚀 Option 1: Lokale Nutzung (Einfachste)</h2>
+        <p><strong>Öffne einfach diese Dateien im Browser:</strong></p>
+        <ol>
+            <li>Gehe zum Ordner: <code>Zeiterfassung</code></li>
+            <li>Klicke mit Doppelklick auf <code>index.html</code></li>
+            <li>Die App öffnet sich im Browser!</li>
+        </ol>
+        <div class="warning">
+            <strong>⚠️ Hinweis:</strong> Wenn du Probleme mit localStorage hast, nutze Option 2 statt Option 1.
+        </div>
+    </div>
+
+    <div class="box">
+        <h2>☁️ Option 2: Online-Server (Empfohlen)</h2>
+        <p>Für zuverlässige Datenfreigabe mehrerer Benutzer auf dem Schul-Netzwerk:</p>
+
+        <h3>Mit Replit (Kostenlos):</h3>
+        <ol>
+            <li>Gehe zu <a href="https://replit.com" target="_blank">replit.com</a></li>
+            <li>Erstelle einen neuen "HTML, CSS, JS" Projekt</li>
+            <li>Kopiere die Inhalte aus:
+                <ul>
+                    <li><code>index.html</code> → <code>index.html</code></li>
+                    <li><code>dashboard.html</code> → <code>dashboard.html</code></li>
+                    <li><code>styles.css</code> → <code>styles.css</code></li>
+                    <li><code>auth.js</code> → <code>auth.js</code></li>
+                    <li><code>app.js</code> → <code>app.js</code></li>
+                </ul>
+            </li>
+            <li>Klicke auf "Run" und teile den Link mit schülern!</li>
+        </ol>
+
+        <h3>Mit Python HTTP-Server (Falls Python installiert ist):</h3>
+        <ol>
+            <li>Öffne Terminal/CMD im Ordner <code>Zeiterfassung</code></li>
+            <li>Führe aus: <code>python -m http.server 8000</code></li>
+            <li>Öffne: <code>http://localhost:8000</code></li>
+            <li>Fertig!</li>
+        </ol>
+    </div>
+
+    <div class="box">
+        <h2>🧪 Test-Anleitung</h2>
+
+        <h3>Schritt 1: Konto erstellen</h3>
+        <ol>
+            <li>Klicke auf "Registrieren"</li>
+            <li>Username: <code>testuser1</code></li>
+            <li>Passwort: <code>password123</code></li>
+            <li>Bestätige Passwort: <code>password123</code></li>
+            <li>Klicke "Konto erstellen"</li>
+        </ol>
+
+        <h3>Schritt 2: Anmelden</h3>
+        <ol>
+            <li>Zurück zu "Anmelden"</li>
+            <li>Username: <code>testuser1</code></li>
+            <li>Passwort: <code>password123</code></li>
+            <li>Klicke "Anmelden"</li>
+            <li>✅ Du solltest zum Dashboard weitergeleitet werden</li>
+        </ol>
+
+        <h3>Schritt 3: Dashboard testen</h3>
+        <ul>
+            <li>✅ "Status Heute" sollte "Anwesend" zeigen (grün)</li>
+            <li>✅ Der heutige Tag im Kalender sollte grün sein</li>
+            <li>✅ Statistiken sollten aktualisiert sein</li>
+            <li>✅ Anmeldungszeit sollte in Tabelle angezeigt werden</li>
+        </ul>
+
+        <h3>Schritt 4: Auto-Absent Test</h3>
+        <ol>
+            <li>Wenn es nach 12:00 Uhr ist:</li>
+            <li>Erstelle ein neues Konto (z.B. <code>testuser2</code>)</li>
+            <li>Melde dich NICHT an über die normale Anmeldung</li>
+            <li>Öffne die Browser-Konsole (F12 → Console)</li>
+            <li>Gebe ein: <code>localStorage.getItem('attendance')</code></li>
+            <li>✅ Du solltest sehen, dass testuser2 auf "absent" gesetzt ist</li>
+        </ol>
+
+        <h3>Schritt 5: Backup testen</h3>
+        <ol>
+            <li>Melde dich an</li>
+            <li>Scrole zu "Datensicherung"</li>
+            <li>Klicke "Daten exportieren (JSON)"</li>
+            <li>✅ Ein JSON-File sollte heruntergeladen werden</li>
+            <li>Klicke "Daten importieren (JSON)" und wähle die Datei</li>
+            <li>✅ Daten sollten wiederhergestellt werden</li>
+        </ol>
+    </div>
+
+    <div class="box">
+        <h2>📊 Funktionsübersicht</h2>
+        <table border="1" cellpadding="10" style="width:100%; border-collapse: collapse;">
+            <tr style="background: #f0f0f0;">
+                <th>Funktion</th>
+                <th>Status</th>
+                <th>Details</th>
+            </tr>
+            <tr>
+                <td>Benutzerregistrierung</td>
+                <td>✅</td>
+                <td>Min. 3 Zeichen Benutzername, min. 6 Zeichen Passwort</td>
+            </tr>
+            <tr>
+                <td>Benutzer-Login</td>
+                <td>✅</td>
+                <td>Mit Validierung und Fehlerbehandlung</td>
+            </tr>
+            <tr>
+                <td>Anwesenheitsmarkierung</td>
+                <td>✅</td>
+                <td>Automatisch beim Login mit Uhrzeit</td>
+            </tr>
+            <tr>
+                <td>Auto-Absent (12:00)</td>
+                <td>✅</td>
+                <td>Nach 12:00 Uhr, wenn nicht angemeldet</td>
+            </tr>
+            <tr>
+                <td>Dashboard</td>
+                <td>✅</td>
+                <td>Heute-Status, Kalender, Statistiken</td>
+            </tr>
+            <tr>
+                <td>Historientabelle</td>
+                <td>✅</td>
+                <td>Alle Anwesenheitseinträge mit Details</td>
+            </tr>
+            <tr>
+                <td>Export/Import</td>
+                <td>✅</td>
+                <td>JSON-Backup und Wiederherstellung</td>
+            </tr>
+            <tr>
+                <td>Responsive Design</td>
+                <td>✅</td>
+                <td>Desktop, Tablet, Telefon</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box">
+        <h2>⚙️ Browser-Konsole für Debugging</h2>
+        <p>Wenn etwas nicht funktioniert, öffne die Konsole (F12) und überprüfe:</p>
+        <pre style="background: #f4f4f4; padding: 10px; border-radius: 6px; overflow-x: auto;">
+// Alle Benutzer anzeigen
+console.log(JSON.parse(localStorage.getItem('users')))
+
+// Alle Anwesenheitsdaten anzeigen
+console.log(JSON.parse(localStorage.getItem('attendance')))
+
+// Aktuellen Benutzer anzeigen
+console.log(JSON.parse(localStorage.getItem('currentUser')))
+
+// localStorage löschen (wenn etwas kaputt ist)
+localStorage.clear()
+        </pre>
+    </div>
+
+    <div class="box" style="background: #e7f3ff; border: 1px solid #2196F3;">
+        <h2>💡 Tipps & Tricks</h2>
+        <ul>
+            <li><strong>Mehrere Tests:</strong> Öffne mehrere Browser-Tabs mit unterschiedlichen Nutzern</li>
+            <li><strong>Daten durcheinander?:</strong> Drücke F12 → Console und gebe <code>localStorage.clear()</code> ein</li>
+            <li><strong>Sichere deine Daten:</strong> Exportiere regelmäßig JSON-Backups</li>
+            <li><strong>Zeitzonen:</strong> Die App nutzt die Systemzeit deines Computers</li>
+        </ul>
+    </div>
+
+    <center style="margin-top: 40px;">
+        <a href="index.html" class="button">🚀 Zur App</a>
+        <a href="README.md" class="button">📖 Dokumentation</a>
+    </center>
+
+</body>
+</html>

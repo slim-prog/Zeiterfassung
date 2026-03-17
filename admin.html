@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeiterfassung - Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="dashboard-header admin-header">
+            <div class="header-content">
+                <h1>⚙️ Admin Panel - Zeiterfassung</h1>
+                <div class="user-info">
+                    <span id="currentUser">Geladen...</span>
+                    <button onclick="handleLogout()" class="btn-logout">Abmelden</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            
+            <!-- Overview Section -->
+            <section class="admin-section">
+                <h2>📊 Übersicht</h2>
+                <div class="admin-stats">
+                    <div class="admin-stat">
+                        <h3>Gesamtzahl Benutzer</h3>
+                        <p id="totalUsers" class="stat-number">-</p>
+                    </div>
+                    <div class="admin-stat">
+                        <h3>Cursanten</h3>
+                        <p id="totalStudents" class="stat-number">-</p>
+                    </div>
+                    <div class="admin-stat">
+                        <h3>Admins</h3>
+                        <p id="totalAdmins" class="stat-number">-</p>
+                    </div>
+                    <div class="admin-stat">
+                        <h3>Präsenz heute</h3>
+                        <p id="presentToday" class="stat-number">-</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Export Section -->
+            <section class="admin-section">
+                <h2>📥 Datenexport</h2>
+                <p style="color: #666; margin-bottom: 20px;">Exportieren Sie Anwesenheitsdaten in verschiedenen Formaten für Berichte und Analysen.</p>
+                
+                <div class="export-options">
+                    <div class="export-group">
+                        <h3>Format wählen:</h3>
+                        <label>
+                            <input type="radio" name="exportFormat" value="csv" checked>
+                            CSV (Excel-kompatibl)
+                        </label>
+                        <label>
+                            <input type="radio" name="exportFormat" value="json">
+                            JSON (Datensicherung)
+                        </label>
+                    </div>
+
+                    <div class="export-group">
+                        <h3>Zeitraum:</h3>
+                        <label>
+                            <input type="radio" name="exportRange" value="all" checked>
+                            Alle Daten
+                        </label>
+                        <label>
+                            <input type="radio" name="exportRange" value="month">
+                            Diesen Monat
+                        </label>
+                        <label>
+                            <input type="radio" name="exportRange" value="custom">
+                            Benutzerdefiniert (von - bis)
+                        </label>
+                    </div>
+
+                    <div class="export-group" id="dateRangeGroup" style="display: none;">
+                        <label>Von:<input type="date" id="exportStartDate"></label>
+                        <label>Bis:<input type="date" id="exportEndDate"></label>
+                    </div>
+
+                    <div class="export-buttons">
+                        <button onclick="handleExportData()" class="btn-export">📥 Daten Exportieren</button>
+                        <button onclick="exportDailyReport()" class="btn-export">📄 Tagesbericht Exportieren</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Management Section -->
+            <section class="admin-section">
+                <h2>👥 Benutzerverwaltung</h2>
+                <div class="users-list">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Benutzername</th>
+                                <th>Rolle</th>
+                                <th>Registriert am</th>
+                                <th>Zuletzt angemeldet</th>
+                                <th>Anmeldungen</th>
+                                <th>Präsenztage</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="7" style="text-align: center; color: #999;">Laden...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Data Privacy Section -->
+            <section class="admin-section">
+                <h2>🔒 Datenschutz (GDPR/DSGVO)</h2>
+                <div class="privacy-info">
+                    <h3>⚠️ Wichtige Informationen:</h3>
+                    <ul>
+                        <li><strong>Datenverschlüsselung:</strong> Alle Passwörter werden mit SHA-256 verschlüsselt gespeichert</li>
+                        <li><strong>Datenspeicherung:</strong> Daten werden lokal im Browser (localStorage) gespeichert</li>
+                        <li><strong>Datenschutz:</strong> Keine Daten werden an externe Server übertragen</li>
+                        <li><strong>Zugriffsschutz:</strong> Nur authentifizierte Administratoren haben Zugriff</li>
+                        <li><strong>Datenlöschung:</strong> Löschen Sie alte Daten nach Ablauf der Aufbewahrungsfrist</li>
+                    </ul>
+                    <button onclick="clearOldData()" class="btn-danger">🗑️ Alte Daten löschen (älter als 90 Tage)</button>
+                </div>
+            </section>
+
+            <!-- System Settings -->
+            <section class="admin-section">
+                <h2>⚙️ Systemeinstellungen</h2>
+                <div class="settings-info">
+                    <p><strong>PIN-System:</strong> <span id="pinStatus">🔴 Deaktiviert (Für Zukunft vorgesehen)</span></p>
+                    <p><strong>IP-Verifikation:</strong> <span id="ipStatus">-</span></p>
+                    <p><strong>Auto-Löschung:</strong> <span id="autoDeleteStatus">-</span></p>
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 15px; border-radius: 6px;">
+                        <p style="margin: 0; color: #856404;"><strong>ℹ️ Hinweis:</strong> Das PIN-System wird implementiert, wenn die notwendige Hardware (Display in Klassenzimmer) vorhanden ist.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="page-footer">
+            <p>Erstellt von Daniel-Cosmin Rogoz | Admin Panel</p>
+        </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

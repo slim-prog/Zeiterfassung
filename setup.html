@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeiterfassung - Admin Setup</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .setup-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            margin: 0 auto;
+        }
+
+        .setup-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .setup-box h1 {
+            text-align: center;
+            color: #dc3545;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .setup-box .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .setup-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .setup-warning strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #dc3545;
+            box-shadow: 0 0 5px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-setup {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-setup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 20px;
+            text-align: center;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn-back:hover {
+            text-decoration: underline;
+        }
+
+        .setup-info {
+            background: #e8f4f8;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #004085;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 15px;
+            text-align: center;
+            min-height: 20px;
+        }
+
+        .success-message {
+            color: #28a745;
+            font-size: 14px;
+            margin-top: 15px;
+            text-align: center;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div class="setup-container">
+        <div class="setup-box">
+            <h1>🔐 Admin Setup</h1>
+            <p class="subtitle">Initialisierung des ersten Administrator-Kontos</p>
+
+            <div class="setup-warning">
+                <strong>⚠️ Wichtig:</strong>
+                Diese Seite wird nur für die initiale Einrichtung benötigt. Nach der Erstellung des ersten Admin-Kontos sollten weitere Administratoren über das Admin-Panel hinzugefügt werden.
+            </div>
+
+            <form id="setupForm" onsubmit="handleSetup(event)">
+                <div class="form-group">
+                    <label for="secretCode">Geheimer Code:</label>
+                    <input type="password" id="secretCode" name="secretCode" required placeholder="Geheimen Setupcode eingeben">
+                </div>
+
+                <div class="form-group">
+                    <label for="adminUsername">Admin Benutzername:</label>
+                    <input type="text" id="adminUsername" name="adminUsername" required placeholder="z.B. admin, glander, pmo">
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPassword">Admin Passwort:</label>
+                    <input type="password" id="adminPassword" name="adminPassword" required placeholder="Mindestens 6 Zeichen">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Passwort bestätigen:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Wiederhole das Passwort">
+                </div>
+
+                <button type="submit" class="btn-setup">Admin Konto erstellen</button>
+            </form>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+
+            <div class="setup-info">
+                <strong>ℹ️ Was passiert als nächstes:</strong>
+                Nach der Erstellung können Sie sich mit den eingegebenen Anmeldedaten anmelden und Zugriff auf das Admin-Panel erhalten.
+            </div>
+
+            <a href="index.html" class="btn-back">← Zurück zur Anmeldung</a>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="setup.js"></script>
+</body>
+</html>
