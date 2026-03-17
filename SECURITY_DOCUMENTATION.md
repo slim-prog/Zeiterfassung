@@ -531,8 +531,8 @@ Anschließend Datei speichern und ggf. neu testen.
 
 Bei Fragen oder Problemen:
 
-- Datenschutz: datenschutz@lutz-grub.de  
-- Entwicklung: Daniel Rogoz (daniel@example.com)
+- Datenschutz: datenschutz@dr.com  
+- Entwicklung: Daniel Rogoz danielrogoz@dr.com
 
 Dokumentversion: 1.0  
 Datum: 17.03.2026  
