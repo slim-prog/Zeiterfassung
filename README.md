@@ -1,120 +1,137 @@
-# Zeiterfassung - Schulanwesenheit Tracking
+# Zeiterfassung – Schulanwesenheit Tracking
 
-## Descriere
-Aplicație web pentru înregistrarea prezenței la școală. Utilizatorii se pot loga pentru a marca prezența, iar dacă nu se logheaza până la 12:00, sistemul marchează automat absența.
+## Beschreibung
 
-## Caracteristici
+Webanwendung zur Erfassung der Anwesenheit in der Schule. Benutzer können sich einloggen, um ihre Anwesenheit zu markieren; wenn sie sich bis 12:00 Uhr nicht anmelden, markiert das System sie automatisch als abwesend.
 
-- ✅ **Autentificare Multi-User**: Fiecare utilizator are propriul cont cu username și parolă
-- ✅ **Marcarea Prezență**: La login, prezența este marcată automat cu ora
-- ✅ **Auto-Absent**: La 12:00, utilizatorii nelogați sunt marcați automat ca absenti
-- ✅ **Dashboard Complet**:
-  - Status de astazi (Prezent / Absent)
-  - Calendar lunar cu codare culori (verde = prezent, roșu = absent)
-  - Statistici generale (zile prezente, zile absente, procent)
-  - Istoric detaliat al prezenței
-- ✅ **Export/Import**: Salvare și restaurare de backup a datelor în format JSON
-- ✅ **Responsiv**: Funcționează pe desktop, tabletă și telefon
+## Funktionen
 
-## Instalare și Utilizare
+- Mehrbenutzer‑Authentifizierung: Jeder Benutzer hat ein eigenes Konto mit Benutzername und Passwort.
+- Automatische Anwesenheitsmarkierung: Beim Login wird die Anwesenheit automatisch mit Uhrzeit erfasst.
+- Auto‑Absent: Um 12:00 Uhr werden nicht eingeloggte Benutzer automatisch als abwesend markiert.
+- Vollständiges Dashboard:
+  - Heutiger Status (anwesend / abwesend)
+  - Monatskalender mit Farbkennzeichnung (grün = anwesend, rot = abwesend)
+  - Allgemeine Statistiken (Anwesenheitstage, Abwesenheitstage, Prozentwerte)
+  - Detaillierter Anwesenheitsverlauf
+- Export/Import: Sichern und Wiederherstellen der Daten im JSON‑Format.
+- Responsives Design: Funktioniert auf Desktop, Tablet und Smartphone.
 
-### Pasul 1: Deschide aplicația
-1. Descarcă folderul `Zeiterfassung`
-2. Deschide fișierul `index.html` în browserul tău (dublu-click pe fișier)
+## Installation und Nutzung
 
-### Pasul 2: Creează un cont
-1. Click pe "Registrieren" (Înregistrare)
-2. Introdu un username și parolă (minimum 6 caractere pentru parolă)
-3. Click "Konto erstellen"
+### Schritt 1: Anwendung öffnen
 
-### Pasul 3: Logheaza-te
-1. Introdu username-ul și parola
-2. Click "Anmelden"
-3. La login, prezența va fi marcată automat pentru ziua curentă
+1. Lade den Ordner `Zeiterfassung` herunter.
+2. Öffne die Datei `index.html` in deinem Browser (Doppelklick auf die Datei).
 
-### Pasul 4: Vizualizează Dashboard
-După login, vei vedea:
-- **Status Astazi**: Dacă ești anwesend (prezent) sau abwesen (absent)
-- **Calendar**: Vizualizare grafică a zilelor cu prezență/absență
-- **Statistici**: Număr de zile prezent, absent și procent
-- **Istoric**: Tabel cu detalii despre fiecare zi
+### Schritt 2: Konto erstellen
 
-## Cum funcționează Auto-Absent?
+1. Klicke auf „Registrieren“.
+2. Gib einen Benutzernamen und ein Passwort ein (Passwort mindestens 6 Zeichen).
+3. Klicke auf „Konto erstellen“.
 
-- **Înainte de 12:00**: Dacă te loghezi, ești marcat ca "Prezent"
-- **La 12:00 și după**: Dacă nu te-ai logat, ești marcat automat ca "Absent"
-- **La 12:00 și după**: Dacă te loghezi, ești marcat ca "Prezent" cu ora exactă
+### Schritt 3: Anmelden
 
-## Backup și Export de Date
+1. Gib deinen Benutzernamen und dein Passwort ein.
+2. Klicke auf „Anmelden“.
+3. Beim Login wird die Anwesenheit automatisch für den aktuellen Tag markiert.
 
-### Export (Salvare):
-1. Mergi la secțiunea "Datensicherung" (Datensicherung)
-2. Click "Daten exportieren (JSON)"
-3. Un fișier JSON va fi descărcat cu datele tale
+### Schritt 4: Dashboard ansehen
 
-### Import (Restaurare):
-1. Click "Daten importieren (JSON)"
-2. Selectează un fișier JSON exportat anterior
-3. Datele vor fi restaurate
+Nach dem Login siehst du:
 
-## Structura Folderelor
+- Heutigen Status: Ob du anwesend oder abwesend bist.
+- Kalender: Grafische Übersicht der Anwesenheits‑/Abwesenheitstage.
+- Statistiken: Anzahl Anwesenheitstage, Abwesenheitstage und prozentuale Verteilung.
+- Verlauf: Tabelle mit Details zu jedem einzelnen Tag.
 
-```
+## Wie funktioniert Auto‑Absent?
+
+- Vor 12:00 Uhr: Wenn du dich einloggst, wirst du als „anwesend“ markiert.
+- Um 12:00 Uhr und danach: Wenn du dich nicht eingeloggt hast, wirst du automatisch als „abwesend“ markiert.
+- Um 12:00 Uhr und danach: Wenn du dich einloggst, wirst du als „anwesend“ mit genauer Uhrzeit markiert.
+
+## Backup und Datenexport
+
+### Export (Sichern)
+
+1. Öffne im Dashboard den Bereich „Datensicherung“.
+2. Klicke auf „Daten exportieren (JSON)“.
+3. Eine JSON‑Datei mit deinen Daten wird heruntergeladen.
+
+### Import (Wiederherstellen)
+
+1. Klicke auf „Daten importieren (JSON)“.
+2. Wähle eine zuvor exportierte JSON‑Datei aus.
+3. Die Daten werden wiederhergestellt.
+
+## Ordnerstruktur
+
+```text
 Zeiterfassung/
-├── index.html          # Pagina de login
-├── dashboard.html      # Pagina principală cu statistici
-├── styles.css          # Stiluri CSS
-├── auth.js             # Logica de autentificare
-├── app.js              # Logica de dashboard
-└── README.md           # Acest fișier
+├── index.html          # Login-Seite
+├── dashboard.html      # Hauptseite mit Statistiken
+├── styles.css          # CSS-Stile
+├── auth.js             # Logik für Authentifizierung
+├── app.js              # Logik für das Dashboard
+└── README.md           # Diese Datei
 ```
 
-## Datele sunt Salvate Unde?
+## Wo werden die Daten gespeichert?
 
-Datele sunt stocate în **localStorage** al browserului:
-- Utilizatorii și parolele: `localStorage.users`
-- Prezența: `localStorage.attendance`
-- Utilizator logat: `localStorage.currentUser`
+Die Daten werden im **localStorage** des Browsers gespeichert:
 
-**IMPORTANT**: Dacă ștergi istoricul browserului, vei pierde datele. Face regulat backup!
+- Benutzer und Passwörter: `localStorage.users`
+- Anwesenheit: `localStorage.attendance`
+- Eingeloggter Benutzer: `localStorage.currentUser`
 
-## Securitate
+Wichtig: Wenn du den Browserverlauf löschst, gehen die Daten verloren. Erstelle regelmäßig Backups.
 
-⚠️ **Notă de Siguranță**:
-- Parolele sunt hashed cu un algoritm simplu (nu pentru producție)
-- Pentru uz personal/educativ este OK
-- Pentru uz serios, folosește o bază de date cu autentificare SSL
+## Sicherheit
+
+Hinweis zur Sicherheit:
+
+- Passwörter werden mit einem einfachen Hash‑Algorithmus gespeichert (nicht für den Produktionseinsatz geeignet).
+- Für persönlichen oder schulischen Gebrauch ist dies ausreichend.
+- Für ernsthaften produktiven Einsatz sollte eine Datenbank mit sicherer Authentifizierung (z.B. SSL, stärkeres Hashing, Server‑Backend) verwendet werden.
 
 ## Troubleshooting
 
-### Problema: Nu mă pot loga
-**Soluție**: Unele browsere sunt strict cu localStorage din fișiere locale. Încearcă:
-- Chrome / Edge: Trebuie să rulezi într-un server local
-- Firefox: Ar putea funcționa din fișier
+### Problem: Ich kann mich nicht einloggen
 
-### Problema: Vreau să suportă mai mulți oameni pe rețea
-**Soluție**: Mută aplicația pe un server web (Apache, Nginx, etc.) sau folosește Replit.com
+Mögliche Ursache: Einige Browser sind bei lokal geöffneten Dateien streng im Umgang mit `localStorage`.
 
-### Problema: Au dispărut datele mele
-**Soluție**: Exportează regular backup! Folosește butonul "Daten exportieren"
+Lösungen:
 
-## Roadmap (Funcții viitoare)
+- Chrome / Edge: Anwendung über einen lokalen Webserver ausführen.
+- Firefox: Kann in vielen Fällen auch direkt über die Datei funktionieren.
 
-- [ ] Sincronizare datelor pe cloud
-- [ ] Notificări la 11:55 înainte de auto-absent
-- [ ] Rapoarte PDF
-- [ ] Teme (light/dark mode)
-- [ ] Multi-language support
+### Problem: Mehrere Personen im Netzwerk sollen die Anwendung nutzen
+
+Lösung: Die Anwendung auf einen Webserver (Apache, Nginx usw.) verschieben oder Plattformen wie Replit verwenden.
+
+### Problem: Meine Daten sind verschwunden
+
+Lösung: Erstelle regelmäßig ein Backup. Verwende dazu den Button „Daten exportieren“.
+
+## Roadmap (geplante Funktionen)
+
+- Synchronisation der Daten in der Cloud.
+- Benachrichtigungen um 11:55 Uhr vor Auto‑Absent.
+- PDF‑Berichte.
+- Design‑Themen (z.B. Hell/Dunkel‑Modus).
+- Mehrsprachige Unterstützung.
 
 ## Support
 
-Dacă ai probleme:
-1. Verifică adroni din browser console (F12 → Console)
-2. Asigură-te că localStorage nu este dezactivat
-3. Încearcă alt browser
+Wenn du Probleme hast:
+
+1. Prüfe Fehlermeldungen in der Browser‑Konsole (F12 → „Console“).
+2. Stelle sicher, dass `localStorage` im Browser nicht deaktiviert ist.
+3. Probiere einen anderen Browser aus.
 
 ---
 
-**Created**: 2026-03-17
-**License**: MIT (liber de utilizat)
-**Developed for**: School Attendance Tracking
+**Erstellt:** 2026‑03‑17  
+**Lizenz:** MIT (freie Nutzung)  
+**Entwickelt für:** School Attendance Tracking
