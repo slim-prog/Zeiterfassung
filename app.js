@@ -26,7 +26,7 @@ window.addEventListener('load', () => {
     updateCalendar();
     updateHistoryTable(currentUser);
 
-    // Auto-check for absent status at 12:00
+    // Auto-check for absent status
     checkAutoAbsentOnDashboard();
 });
 
@@ -37,10 +37,7 @@ function getCurrentUser() {
 
 // Update today's status
 function updateTodayStatus(user) {
-    // Admins do not need to track präsenztage
-    if (user.role === 'admin') {
-        return;
-    }
+    if (user.role === 'admin') return;
     
     const today = new Date().toISOString().split('T')[0];
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
@@ -49,94 +46,127 @@ function updateTodayStatus(user) {
 
     const statusDiv = document.getElementById('todayStatus');
     
-    // Berechne aktuelle Statistiken
-    const presentDays = userAttendance.filter(a => a.status === 'present').length;
+    // Calculăm zilele necesare doar pentru cazul "Abwesend" sau dacă vrei să-l păstrezi ca referință
+    const presentDays = userAttendance.filter(a => a.status === 'present' || a.status === 'Verspätet').length;
     const requiredPresentDays = 134;
     const remainingDays = Math.max(0, requiredPresentDays - presentDays);
 
     if (todayRecord) {
+        let checkoutHtml = '';
+        if ((todayRecord.status === 'present' || todayRecord.status === 'Verspätet') && !todayRecord.logoutTime) {
+            checkoutHtml = `<button onclick="handleCheckout()" style="margin-top: 10px; padding: 6px 12px; background: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 4px; cursor: pointer; font-size: 13px;">Gehen / Ausstempeln</button>`;
+        }
+        
+        let logoutText = todayRecord.logoutTime ? `<p style="font-size: 14px; margin-top: 5px;">Gehen: ${todayRecord.logoutTime}</p>` : '';
+
         if (todayRecord.status === 'present') {
             statusDiv.className = 'status-card present';
             statusDiv.innerHTML = `
-                <h3>✓ Anwesend</h3>
-                <p>Anmeldungszeit: ${todayRecord.loginTime || 'N/A'}</p>
-                <p style="font-size: 12px; margin-top: 10px; color: inherit;">Präsenz: ${presentDays} / ${requiredPresentDays} Tage</p>
+                <h3 style="margin-bottom: 10px;">✓ Anwesend</h3>
+                <p style="font-size: 14px;">Ankunft: ${todayRecord.loginTime || 'N/A'}</p>
+                ${logoutText}
+                ${checkoutHtml}
+            `;
+        } else if (todayRecord.status === 'Verspätet') {
+            statusDiv.className = 'status-card';
+            statusDiv.style.background = '#fff3cd';
+            statusDiv.style.borderLeft = '4px solid #ffc107';
+            statusDiv.style.color = '#856404';
+            statusDiv.style.padding = '20px';
+            statusDiv.style.borderRadius = '8px';
+            statusDiv.style.textAlign = 'center';
+            
+            statusDiv.innerHTML = `
+                <h3 style="margin-bottom: 10px; font-size: 18px;">⏱ Verspätet</h3>
+                <p style="font-size: 14px;">Ankunft: ${todayRecord.loginTime || 'N/A'}</p>
+                ${logoutText}
+                ${checkoutHtml}
             `;
         } else {
             statusDiv.className = 'status-card absent';
             statusDiv.innerHTML = `
-                <h3>✗ Abwesend</h3>
-                <p>${todayRecord.autoMarked ? 'Automatisch markiert (12:00 Uhr)' : 'Manuell markiert'}</p>
-                <p style="font-size: 12px; margin-top: 10px; color: inherit;">Noch erforderlich: ${remainingDays} Tage</p>
+                <h3 style="margin-bottom: 10px;">✗ Abwesend</h3>
+                <p style="font-size: 14px;">${todayRecord.autoMarked ? 'Automatisch markiert (> 08:15)' : 'Manuell markiert'}</p>
             `;
         }
     } else {
         const now = new Date();
-        if (now.getHours() >= 12) {
+        const totalMinutes = (now.getHours() * 60) + now.getMinutes();
+
+        statusDiv.className = 'status-card unknown';
+        statusDiv.style.padding = '20px';
+        statusDiv.style.borderRadius = '8px';
+        statusDiv.style.textAlign = 'center';
+
+        if (totalMinutes < 420) { // < 07:00
+            statusDiv.innerHTML = `
+                <h3 style="margin-bottom: 10px;">? Zu früh</h3>
+                <p style="font-size: 14px;">Anmeldung ab 07:00 Uhr</p>
+            `;
+        } else if (totalMinutes > 495) { // > 08:15
             statusDiv.className = 'status-card absent';
             statusDiv.innerHTML = `
-                <h3>✗ Abwesend</h3>
-                <p>Nicht angemeldet</p>
-                <p style="font-size: 12px; margin-top: 10px; color: inherit;">Noch erforderlich: ${remainingDays} Tage</p>
+                <h3 style="margin-bottom: 10px;">✗ Abwesend</h3>
+                <p style="font-size: 14px;">Nicht rechtzeitig angemeldet</p>
             `;
-        } else {
-            statusDiv.className = 'status-card unknown';
+        } else { // 07:00 - 08:15
             statusDiv.innerHTML = `
-                <h3>? Noch nicht angemeldet</h3>
-                <p>Bitte melden Sie sich an, um präsent zu sein</p>
-                <p style="font-size: 12px; margin-top: 10px; color: inherit;">Präsenz: ${presentDays} / ${requiredPresentDays} Tage</p>
+                <h3 style="margin-bottom: 10px;">? Nicht angemeldet</h3>
+                <p style="font-size: 14px;">Bitte melde dich an</p>
             `;
         }
+    }
+}
+
+// Neue Funktion für das "Gehen"
+function handleCheckout() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const logoutTimeStr = now.toLocaleTimeString('de-DE');
+
+    const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+    if (!attendance[user.id]) return;
+
+    const todayRecord = attendance[user.id].find(a => a.date === today);
+    if (todayRecord) {
+        todayRecord.logoutTime = logoutTimeStr;
+        localStorage.setItem('attendance', JSON.stringify(attendance));
+        
+        // UI sofort aktualisieren
+        updateTodayStatus(user);
+        updateHistoryTable(user);
     }
 }
 
 // Update statistics
 function updateStatistics(user) {
-    // Admins do not need to track präsenztage
-    if (user.role === 'admin') {
-        return;
-    }
+    if (user.role === 'admin') return;
     
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
     const userAttendance = attendance[user.id] || [];
 
-    // Kriterien:
-    // 100% = 263 Tage Unterricht
-    // 51% = 134 Tage in Präsenz (mindestens erforderlich)
-    const maxTeachingDays = 263;
     const requiredPresentDays = 134;
-    const requiredPercentage = 51;
 
-    const presentDays = userAttendance.filter(a => a.status === 'present').length;
+    // Verspätet zählt auch als Präsenz für die Anforderungen
+    const presentDays = userAttendance.filter(a => a.status === 'present' || a.status === 'Verspätet').length;
     const absentDays = userAttendance.filter(a => a.status === 'absent').length;
-    const totalRecordedDays = userAttendance.length;
     
     // Berechne den Prozentsatz basierend auf 263 max Tage
-    const percentageOfMax = totalRecordedDays > 0 ? Math.round((presentDays / requiredPresentDays) * 100) : 0;
-    
-    // Noch fehlende Tage in Präsenz
+    const percentageOfMax = userAttendance.length > 0 ? Math.round((presentDays / requiredPresentDays) * 100) : 0;
     const remainingPresentDays = Math.max(0, requiredPresentDays - presentDays);
 
     document.getElementById('presentDays').textContent = presentDays + ' / ' + requiredPresentDays;
     document.getElementById('absentDays').textContent = absentDays;
-    document.getElementById('attendancePercent').textContent = percentageOfMax + '%';
-    
-    // Speichere Statistiken für Status-Anzeige
-    user.stats = {
-        presentDays: presentDays,
-        requiredPresentDays: requiredPresentDays,
-        absentDays: absentDays,
-        totalRecordedDays: totalRecordedDays,
-        percentageOfRequired: percentageOfMax,
-        remainingPresentDays: remainingPresentDays,
-        meetsRequirement: presentDays >= requiredPresentDays
-    };
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    document.getElementById('attendancePercent').textContent = Math.min(percentageOfMax, 100) + '%';
     
     // Update progress bar
     updateProgressBar(presentDays, requiredPresentDays, remainingPresentDays);
 }
 
+// Update progress bar
 // Update progress bar
 function updateProgressBar(presentDays, requiredDays, remainingDays) {
     const progressFill = document.getElementById('progressFill');
@@ -148,22 +178,20 @@ function updateProgressBar(presentDays, requiredDays, remainingDays) {
         
         if (presentDays >= requiredDays) {
             progressFill.style.backgroundColor = '#28a745';
-            progressText.innerHTML = `<strong>✓ Anforderung erfüllt!</strong> Sie haben ${presentDays} Tage erforderlicher${requiredDays} erreicht.`;
+            progressText.innerHTML = `<strong>✓ Anforderung erfüllt!</strong> Sie haben ${presentDays} erforderliche Tage erreicht.`;
         } else {
             progressFill.style.backgroundColor = '#667eea';
-            progressText.innerHTML = `Noch ${remainingDays} ${remainingDays === 1 ? 'Tag' : 'Tage'} erforderlich für die Absolvierung`;
+            // Am eliminat "für die Absolvierung" aici
+            progressText.innerHTML = `Noch ${remainingDays} ${remainingDays === 1 ? 'Tag' : 'Tage'} erforderlich`;
         }
     }
 }
 
+
 // Update calendar
 function updateCalendar() {
     const user = getCurrentUser();
-    
-    // Admins do not need to view calendar
-    if (user.role === 'admin') {
-        return;
-    }
+    if (user.role === 'admin') return;
     
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
     const userAttendance = attendance[user.id] || [];
@@ -171,14 +199,12 @@ function updateCalendar() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    // Update month/year display
     const monthNames = [
         'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
         'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
     ];
     document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
 
-    // Create calendar grid
     const calendarGrid = document.getElementById('calendarGrid');
     calendarGrid.innerHTML = '';
 
@@ -191,7 +217,6 @@ function updateCalendar() {
         calendarGrid.appendChild(dayHeader);
     });
 
-    // Get first day of month (0 = Sunday, so we adjust for Monday)
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
@@ -214,9 +239,17 @@ function updateCalendar() {
         dayElement.className = 'calendar-day';
 
         if (record) {
-            dayElement.classList.add(record.status);
+            if(record.status === 'Verspätet') {
+                // Inline styles für Verspätet, da wir styles.css nicht groß ändern
+                dayElement.style.background = '#fff3cd';
+                dayElement.style.borderColor = '#ffc107';
+                dayElement.style.color = '#856404';
+                dayElement.style.fontWeight = 'bold';
+            } else {
+                dayElement.classList.add(record.status);
+            }
             dayElement.textContent = day;
-            dayElement.title = `${record.status === 'present' ? 'Anwesend' : 'Abwesend'}: ${record.loginTime || 'Auto-Markiert'}`;
+            dayElement.title = `${record.status}: Ankunft ${record.loginTime || '-'}`;
         } else {
             dayElement.textContent = day;
         }
@@ -225,8 +258,8 @@ function updateCalendar() {
     }
 
     // Next month's days
-    const totalCells = calendarGrid.children.length - 7; // Total cells minus headers
-    const remainingCells = 35 - totalCells; // 5x7 grid
+    const totalCells = calendarGrid.children.length - 7;
+    const remainingCells = 35 - totalCells;
     for (let day = 1; day <= remainingCells; day++) {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-day other-month';
@@ -248,10 +281,7 @@ function nextMonth() {
 
 // Update history table
 function updateHistoryTable(user) {
-    // Admins do not need presence history
-    if (user.role === 'admin') {
-        return;
-    }
+    if (user.role === 'admin') return;
     
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
     const userAttendance = attendance[user.id] || [];
@@ -259,137 +289,87 @@ function updateHistoryTable(user) {
     const historyBody = document.getElementById('historyBody');
     historyBody.innerHTML = '';
 
-    // Sort by date descending (newest first)
     const sortedAttendance = [...userAttendance].sort((a, b) => new Date(b.date) - new Date(a.date));
 
     sortedAttendance.forEach(record => {
         const row = document.createElement('tr');
         const dateObj = new Date(record.date + 'T00:00:00');
-        const formattedDate = dateObj.toLocaleDateString('de-DE', {
-            weekday: 'short',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
+        const formattedDate = dateObj.toLocaleDateString('de-DE');
 
-        const statusBadge = `<span class="status-badge ${record.status}">${record.status === 'present' ? 'Anwesend' : 'Abwesend'}</span>`;
-        const loginTime = record.loginTime || (record.autoMarked ? 'Auto (12:00)' : '-');
+        let statusText = '';
+        let badgeClass = '';
+        let badgeStyle = '';
+
+        if (record.status === 'present') {
+            statusText = 'Anwesend';
+            badgeClass = 'status-badge present';
+        } else if (record.status === 'absent') {
+            statusText = 'Abwesend';
+            badgeClass = 'status-badge absent';
+        } else if (record.status === 'Verspätet') {
+            statusText = 'Verspätet';
+            badgeClass = 'status-badge';
+            badgeStyle = 'background: #fff3cd; color: #856404;';
+        }
 
         row.innerHTML = `
             <td>${formattedDate}</td>
-            <td>${statusBadge}</td>
-            <td>${loginTime}</td>
+            <td><span class="${badgeClass}" style="${badgeStyle}">${statusText}</span></td>
+            <td>${record.loginTime || '-'}</td>
+            <td>${record.logoutTime || '-'}</td>
         `;
-
         historyBody.appendChild(row);
     });
-
-    if (sortedAttendance.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="3" style="text-align: center; color: #999;">Keine Daten vorhanden</td>';
-        historyBody.appendChild(row);
-    }
 }
 
-// Export data as JSON
+// Export data
 function exportData() {
     const user = getCurrentUser();
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-    const userData = {
-        username: user.username,
-        userId: user.id,
-        exportDate: new Date().toISOString(),
-        attendance: attendance[user.id] || []
-    };
+    const userAttendance = attendance[user.id] || [];
 
-    const dataStr = JSON.stringify(userData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `zeiterfassung_${user.username}_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const dataStr = JSON.stringify(userAttendance, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `zeiterfassung_${user.username}.json`;
+
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
 }
 
-// Import data from JSON
+// Import data
 function importData(event) {
-    const user = getCurrentUser();
     const file = event.target.files[0];
-
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = function(e) {
         try {
             const importedData = JSON.parse(e.target.result);
-
-            if (importedData.userId !== user.id) {
-                alert('Fehler: Diese Datei gehört zu einem anderen Benutzer.');
-                return;
-            }
-
+            const user = getCurrentUser();
             const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-            attendance[user.id] = importedData.attendance;
+            
+            attendance[user.id] = importedData;
             localStorage.setItem('attendance', JSON.stringify(attendance));
-
-            alert('Daten erfolgreich importiert!');
+            
+            updateTodayStatus(user);
             updateStatistics(user);
             updateCalendar();
             updateHistoryTable(user);
-            updateTodayStatus(user);
+            
+            alert('Daten erfolgreich importiert!');
         } catch (error) {
-            alert('Fehler beim Importieren der Datei: ' + error.message);
+            alert('Fehler beim Importieren der Datei. Bitte stellen Sie sicher, dass es sich um eine gültige JSON-Datei handelt.');
         }
     };
-
     reader.readAsText(file);
-    event.target.value = ''; // Reset file input
 }
 
-// Auto-absent check on dashboard
+// Helper for auto-absent on dashboard
 function checkAutoAbsentOnDashboard() {
-    const now = new Date();
-    const user = getCurrentUser();
-    
-    // Admins do not need auto-absent check
-    if (user.role === 'admin') {
-        return;
-    }
-    
-    if (now.getHours() >= 12) {
-        const today = now.toISOString().split('T')[0];
-        const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-
-        if (!attendance[user.id]) {
-            attendance[user.id] = [];
-        }
-
-        const todayRecord = attendance[user.id].find(a => a.date === today);
-
-        if (!todayRecord) {
-            attendance[user.id].push({
-                date: today,
-                status: 'absent',
-                loginTime: null,
-                markedAt: new Date().toISOString(),
-                autoMarked: true
-            });
-
-            localStorage.setItem('attendance', JSON.stringify(attendance));
-            updateTodayStatus(user);
-            updateStatistics(user);
-        }
+    if (typeof checkAndMarkAutoAbsent === 'function') {
+        checkAndMarkAutoAbsent();
     }
 }
-
-// Auto-refresh every 5 minutes
-setInterval(() => {
-    const user = getCurrentUser();
-    if (user) {
-        updateTodayStatus(user);
-        checkAutoAbsentOnDashboard();
-    }
-}, 5 * 60 * 1000);
-
-console.log('Dashboard App Initialized');

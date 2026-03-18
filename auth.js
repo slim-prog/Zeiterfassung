@@ -1,4 +1,4 @@
-// Simple hash function for passwords
+// Einfache Hash-Funktion für Passwörter
 function simpleHash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -9,18 +9,19 @@ function simpleHash(str) {
     return Math.abs(hash).toString(16);
 }
 
-// Show/Hide Register Form
+// Formularwechsel: Registrierung anzeigen
 function showRegister() {
     document.getElementById('loginForm').closest('.login-box').classList.add('hidden');
     document.getElementById('registerBox').classList.remove('hidden');
 }
 
+// Formularwechsel: Login anzeigen
 function showLogin() {
     document.getElementById('loginForm').closest('.login-box').classList.remove('hidden');
     document.getElementById('registerBox').classList.add('hidden');
 }
 
-// Handle Registration
+// Registrierung verarbeiten
 function handleRegister(event) {
     event.preventDefault();
 
@@ -31,7 +32,7 @@ function handleRegister(event) {
 
     errorDiv.textContent = '';
 
-    // Validation
+    // Validierung
     if (newUsername.length < 3) {
         errorDiv.textContent = 'Benutzername muss mindestens 3 Zeichen lang sein.';
         return;
@@ -47,21 +48,20 @@ function handleRegister(event) {
         return;
     }
 
-    // Check if user already exists
+    // Prüfen, ob Benutzer existiert
     const users = JSON.parse(localStorage.getItem('users')) || [];
-    if (users.find(u => u.username === newUsername)) {
+    if (users.find(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
         errorDiv.textContent = 'Benutzername existiert bereits.';
         return;
     }
 
-    // Create new user - ALWAYS as STUDENT (SECURITY FIX)
-    // Admin-Konten können nur von bestehenden Administratoren erstellt werden
+    // Neuen Benutzer erstellen - IMMER als Student
     const hashedPassword = simpleHash(newPassword);
     const newUser = {
         id: Date.now(),
         username: newUsername,
         password: hashedPassword,
-        role: 'student', // SECURITY: Always Student on public registration
+        role: 'student', 
         createdAt: new Date().toISOString(),
         lastLogin: null,
         loginCount: 0
@@ -70,20 +70,20 @@ function handleRegister(event) {
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
 
-    // Initialize empty attendance data
+    // Leeres Anwesenheitsobjekt initialisieren
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
     if (!attendance[newUser.id]) {
         attendance[newUser.id] = [];
     }
     localStorage.setItem('attendance', JSON.stringify(attendance));
 
-    // Success message
+    // Erfolgsmeldung
     alert('Konto erfolgreich erstellt! Bitte melde dich an.');
     showLogin();
     document.getElementById('registerForm').reset();
 }
 
-// Handle Login
+// Login verarbeiten
 function handleLogin(event) {
     event.preventDefault();
 
@@ -93,7 +93,7 @@ function handleLogin(event) {
 
     errorDiv.textContent = '';
 
-    // Get users from localStorage
+    // Benutzer aus localStorage abrufen
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const user = users.find(u => u.username === username);
 
@@ -108,7 +108,7 @@ function handleLogin(event) {
         return;
     }
 
-    // IP Verification (if enabled)
+    // IP Verifikation (falls aktiviert)
     if (typeof ENABLE_IP_VERIFICATION !== 'undefined' && ENABLE_IP_VERIFICATION) {
         if (!verifyIPAddress()) {
             errorDiv.textContent = 'Fehler: Sie müssen sich aus dem Büronetzwerk anmelden.';
@@ -116,47 +116,64 @@ function handleLogin(event) {
         }
     }
 
-    // Daily PIN Verification (DEAKTIVIERT FÜR JETZT)
-    // Wird in Zukunft implementiert, wenn Hardware/Software verfügbar ist
-    // if (typeof ENABLE_DAILY_PIN !== 'undefined' && ENABLE_DAILY_PIN) {
-    //     const enteredPIN = prompt(`Geben Sie den täglichen PIN ein (angezeigt im Klassenzimmer):`);
-    //     if (!enteredPIN || !verifyDailyPIN(enteredPIN)) {
-    //         errorDiv.textContent = 'PIN ist ungültig oder abgelaufen.';
-    //         return;
-    //     }
-    // }
+    // --- NEUE ANWESENHEITSLOGIK ---
+    if (user.role === 'student') {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const totalMinutes = (hours * 60) + minutes;
+        
+        // 07:00 = 420 Minuten | 08:15 = 495 Minuten
+        const START_TIME = 420; 
+        const DEADLINE_TIME = 495;
 
-    // Record attendance
-    const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-    if (!attendance[user.id]) {
-        attendance[user.id] = [];
+        // Vor 07:00 Uhr Login blockieren
+        if (totalMinutes < START_TIME) {
+            errorDiv.textContent = 'Die Anwesenheitserfassung startet erst um 07:00 Uhr.';
+            return;
+        }
+
+        const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+        if (!attendance[user.id]) attendance[user.id] = [];
+        
+        const today = now.toISOString().split('T')[0];
+        const existingRecord = attendance[user.id].find(a => a.date === today);
+        const loginTimeString = now.toLocaleTimeString('de-DE');
+
+        if (!existingRecord) {
+            // Noch kein Eintrag heute
+            const statusForToday = totalMinutes <= DEADLINE_TIME ? 'present' : 'Verspätet';
+            
+            attendance[user.id].push({
+                date: today,
+                status: statusForToday,
+                loginTime: loginTimeString,
+                logoutTime: null, // Für die neue Gehen-Funktion vorbereitet
+                markedAt: now.toISOString(),
+                autoMarked: false
+            });
+        } else if (existingRecord.status === 'absent') {
+            // Wurde automatisch abwesend markiert, loggt sich aber jetzt ein -> Verspätet
+            existingRecord.status = 'Verspätet';
+            existingRecord.loginTime = loginTimeString;
+            existingRecord.autoMarked = false;
+        }
+        // Wenn bereits present oder Verspätet, wird nichts überschrieben (verhindert Dubletten)
+
+        localStorage.setItem('attendance', JSON.stringify(attendance));
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const existingRecord = attendance[user.id].find(a => a.date === today);
-
-    if (!existingRecord) {
-        attendance[user.id].push({
-            date: today,
-            status: 'present',
-            loginTime: new Date().toLocaleTimeString('de-DE'),
-            markedAt: new Date().toISOString()
-        });
-    }
-
-    localStorage.setItem('attendance', JSON.stringify(attendance));
-
-    // Update user login stats
+    // Benutzer-Login-Statistik aktualisieren
     user.lastLogin = new Date().toISOString();
     user.loginCount = (user.loginCount || 0) + 1;
     const userIndex = users.findIndex(u => u.id === user.id);
     users[userIndex] = user;
     localStorage.setItem('users', JSON.stringify(users));
 
-    // Login successful
+    // Login erfolgreich
     localStorage.setItem('currentUser', JSON.stringify(user));
     
-    // Redirect based on role
+    // Weiterleitung basierend auf Rolle
     if (user.role === 'admin') {
         window.location.href = 'admin.html';
     } else {
@@ -164,77 +181,52 @@ function handleLogin(event) {
     }
 }
 
-// Handle Logout
-// Handle Logout
+// Logout verarbeiten
 function handleLogout() {
-    // eingeloggten Benutzer entfernen
     localStorage.removeItem('currentUser');
-    // nur Redirect – das Leeren der Felder übernimmt ein eigener Handler
     window.location.href = 'index.html';
 }
 
-// ===== SECURITY FUNCTIONS =====
+// ===== SICHERHEITSFUNKTIONEN =====
 
-// Verify IP Address (for office network only)
+// IP Adresse prüfen (Platzhalter)
 function verifyIPAddress() {
-    // In a real application, this would check the client's IP via a backend API
-    // For now, we'll use a placeholder that checks localStorage
     const allowedIPs = typeof ALLOWED_IP_RANGES !== 'undefined' ? ALLOWED_IP_RANGES : [];
-    
-    if (!allowedIPs || allowedIPs.length === 0) {
-        return true; // IP verification disabled
-    }
-
-    // This is a simplified check - in production, you'd need a backend service
-    // to get the actual IP address securely (browsers cannot directly access client IP for privacy)
-    console.log('IP Verification would be performed by backend service in production');
+    if (!allowedIPs || allowedIPs.length === 0) return true; 
+    console.log('IP-Prüfung würde im Produktionsbetrieb über ein Backend erfolgen');
     return true;
 }
 
-// Verify Daily PIN
-function verifyDailyPIN(enteredPIN) {
-    const correctPIN = typeof generateDailyPIN !== 'undefined' ? generateDailyPIN() : null;
-    
-    if (!correctPIN) {
-        return false;
-    }
-
-    return parseInt(enteredPIN) === correctPIN;
-}
-
-// Check if admin role
+// Admin-Rechte prüfen
 function isAdmin(user) {
     return user && user.role === 'admin';
 }
 
-// Check permission
+// Rollenrechte prüfen
 function hasPermission(user, permission) {
     if (!user || !user.role) return false;
-    
     const permissions = typeof ROLE_PERMISSIONS !== 'undefined' ? ROLE_PERMISSIONS[user.role] : {};
     return permissions[permission] === true;
 }
 
-// Check if user is logged in
-// Check if user is logged in
+// Seitenaufruf-Prüfung und Initialisierung
 window.addEventListener('load', () => {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     const currentUserStr = localStorage.getItem('currentUser');
     const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-    // Protected pages check
+    // Geschützte Seiten absichern
     if ((currentPage === 'dashboard.html' || currentPage === 'admin.html') && !currentUser) {
         window.location.href = 'index.html';
         return;
     }
 
-    // Check role-based access
     if (currentPage === 'admin.html' && currentUser && currentUser.role !== 'admin') {
         window.location.href = 'dashboard.html';
         return;
     }
 
-    // Wenn bereits eingeloggt, nicht wieder Login-Seite zeigen
+    // Wenn eingeloggt, Login-Seite überspringen
     if ((currentPage === 'index.html' || currentPage === '') && currentUser) {
         if (currentUser.role === 'admin') {
             window.location.href = 'admin.html';
@@ -244,7 +236,7 @@ window.addEventListener('load', () => {
         return;
     }
 
-    // Login-Seite: Formular immer leeren (auch nach Logout)
+    // Login-Felder leeren
     if (currentPage === 'index.html' || currentPage === '') {
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
@@ -256,35 +248,37 @@ window.addEventListener('load', () => {
         }
     }
 
-    // Check for auto-absent (12:00)
+    // Automatische Abwesenheit prüfen
     checkAndMarkAutoAbsent();
 });
 
-// Auto-absent logic
+// Auto-Absent Logik (Angepasst auf > 08:15 Uhr)
 function checkAndMarkAutoAbsent() {
     const now = new Date();
-    const hour = now.getHours();
-    const today = now.toISOString().split('T')[0];
-
-    // Only run this check at 12:00 and beyond
-    if (hour >= 12) {
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const totalMinutes = (hours * 60) + minutes;
+    
+    // Nach 08:15 (495 Minuten) automatisch abwesend markieren
+    if (totalMinutes > 495) {
+        const today = now.toISOString().split('T')[0];
         const users = JSON.parse(localStorage.getItem('users')) || [];
         const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
 
         users.forEach(user => {
-            if (!attendance[user.id]) {
-                attendance[user.id] = [];
-            }
+            if (user.role !== 'student') return;
 
+            if (!attendance[user.id]) attendance[user.id] = [];
             const todayRecord = attendance[user.id].find(a => a.date === today);
 
-            // If no record exists at 12:00, mark as absent
+            // Wenn bis jetzt kein Eintrag existiert -> absent
             if (!todayRecord) {
                 attendance[user.id].push({
                     date: today,
                     status: 'absent',
                     loginTime: null,
-                    markedAt: new Date().toISOString(),
+                    logoutTime: null,
+                    markedAt: now.toISOString(),
                     autoMarked: true
                 });
             }
@@ -294,5 +288,4 @@ function checkAndMarkAutoAbsent() {
     }
 }
 
-// Log user info when page loads
-console.log('Auth System Initialized');
+console.log('Auth System Initialisiert (Neue Regeln: 07:00 - 08:15)');

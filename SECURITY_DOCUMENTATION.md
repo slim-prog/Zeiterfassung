@@ -30,7 +30,7 @@ Aus Sicherheitsgründen wird der erste Admin über eine versteckte Setup‑Seite
 
 1. Geheimer Code: `LUTZ_2026_GRUB_SETUP`  
    (in produktiven Umgebungen ändern)
-2. Admin‑Benutzername: frei wählbar (z.B. `admin`, `glander`, `pmo`).
+2. Admin‑Benutzername: frei wählbar (z.B. `Admin`, `Administrator`, `Sysadmin`).
 3. Admin‑Passwort: starkes Passwort (mindestens 6 Zeichen).
 4. Passwort bestätigen: Passwort wiederholen.
 5. Auf „Admin Konto erstellen“ klicken.
@@ -58,7 +58,7 @@ Wichtig: Nach dem ersten Setup sollte der Code geändert werden.
 const SETUP_SECRET_CODE = "LUTZ_2026_GRUB_SETUP";
 
 // Nachher (Beispiel für Produktion):
-const SETUP_SECRET_CODE = "SchuleLutzGrub2026Secret#AdminSetup!";
+const SETUP_SECRET_CODE = "2026Secret#AdminSetup!";
 ```
 
 Anschließend:
@@ -284,7 +284,7 @@ Beispieltext:
 ```text
 ERKLÄRUNG ZUR VERARBEITUNG PERSONENBEZOGENER DATEN (DSGVO)
 
-Verantwortlicher: Lutz & Grub Academy
+Verantwortlicher: Max Mustermann
 Auftragsverarbeiter: Zeiterfassung-System
 
 Verarbeitete personenbezogene Daten:
@@ -306,9 +306,6 @@ Ihre Rechte:
 - Recht auf Berichtigung
 - Recht auf Löschung
 - Recht auf Datenübertragbarkeit
-
-Kontakt: datenschutz@lutz-grub.de
-```
 
 ---
 
@@ -526,11 +523,6 @@ Anschließend Datei speichern und ggf. neu testen.
 - Sichere Admin‑Erstellung über bestehende Admins.
 
 ---
-
-## Support und Kontakt
-
-Bei Fragen oder Problemen:  
-- Entwicklung: Daniel Rogoz danielrogoz@dr.com
 
 Dokumentversion: 1.0  
 Datum: 17.03.2026  

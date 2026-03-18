@@ -1,6 +1,5 @@
-// Admin Dashboard Logic - GDPR Compliant
+// Admin Dashboard Logic
 
-// Initialize admin dashboard on page load
 window.addEventListener('load', () => {
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (!currentUser || currentUser.role !== 'admin') {
@@ -13,10 +12,13 @@ window.addEventListener('load', () => {
 
     updateAdminOverview();
     loadUsersTable();
-    updateSystemSettings();
 });
 
-// Update admin overview statistics
+function handleLogout() {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+}
+
 function updateAdminOverview() {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
@@ -24,454 +26,416 @@ function updateAdminOverview() {
     const students = users.filter(u => u.role === 'student').length;
     const admins = users.filter(u => u.role === 'admin').length;
 
-    // Count presents today
     const today = new Date().toISOString().split('T')[0];
     let presentToday = 0;
 
     for (const userId in attendance) {
-        const userRecord = attendance[userId].find(a => a.date === today && a.status === 'present');
+        const userRecord = attendance[userId].find(a => a.date === today && (a.status === 'present' || a.status === 'Verspätet'));
         if (userRecord) presentToday++;
     }
 
-    document.getElementById('totalUsers').textContent = users.length;
-    document.getElementById('totalStudents').textContent = students;
-    document.getElementById('totalAdmins').textContent = admins;
-    document.getElementById('presentToday').textContent = presentToday;
+    const tu = document.getElementById('totalUsers');
+    const ts = document.getElementById('totalStudents');
+    const ta = document.getElementById('totalAdmins');
+    const pt = document.getElementById('presentToday');
+
+    if (tu) tu.textContent = users.length;
+    if (ts) ts.textContent = students;
+    if (ta) ta.textContent = admins;
+    if (pt) pt.textContent = presentToday;
 }
 
-// Load users table
 function loadUsersTable() {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     const usersTableBody = document.getElementById('usersTableBody');
 
-    usersTableBody.innerHTML = '';
+    if (!usersTableBody) return;
 
-        const adminCount = users.filter(u => u.role === 'admin').length;
+    usersTableBody.innerHTML = '';
+    const adminCount = users.filter(u => u.role === 'admin').length;
 
     users.forEach(user => {
         const userAttendance = attendance[user.id] || [];
-        const presentDays = userAttendance.filter(a => a.status === 'present').length;
+        
+        // MODIFICARE: Dacă este admin, punem direct "-", altfel calculăm prezența
+        let presentDaysText = "-";
+        if (user.role === 'student') {
+            const presentDays = userAttendance.filter(a => a.status === 'present' || a.status === 'Verspätet').length;
+            presentDaysText = `${presentDays} Tage`;
+        }
+
         const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('de-DE') : 'Nie';
         const createdDate = new Date(user.createdAt).toLocaleDateString('de-DE');
 
         let actionButtons = '';
+        const btnStyle = "flex: 1; min-width: 95px; max-width: 120px; padding: 6px 4px; font-size: 11px; font-weight: 500; border: none; border-radius: 4px; cursor: pointer; text-align: center; color: white;";
 
         if (user.id !== currentUser.id) {
+            actionButtons = '<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 360px; margin: 0 auto;">';
+            
             if (user.role === 'student') {
-                actionButtons += `<button onclick="promoteToAdmin(${user.id})" class="btn-action btn-promote">Zu Admin</button>`;
-                actionButtons += `<button onclick="changeUserPassword(${user.id})" class="btn-action btn-password">Passwort</button>`;
-                actionButtons += `<button onclick="deleteUser(${user.id})" class="btn-action btn-delete">Löschen</button>`;
+                actionButtons += `<button onclick="viewUserHistory(${user.id})" style="${btnStyle} background-color: #007bff;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Verlauf</button>`;
+                actionButtons += `<button onclick="promoteToAdmin(${user.id})" style="${btnStyle} background-color: #28a745;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Zu Admin</button>`;
+                actionButtons += `<button onclick="renameUser(${user.id})" style="${btnStyle} background-color: #17a2b8;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Umbenennen</button>`;
+                actionButtons += `<button onclick="changeUserPassword(${user.id})" style="${btnStyle} background-color: #f8f9fa; color: #333; border: 1px solid #ccc;" onmouseover="this.style.backgroundColor='#e2e2e2'" onmouseout="this.style.backgroundColor='#f8f9fa'">Passwort</button>`;
+                actionButtons += `<button onclick="editUserAttendance(${user.id})" style="${btnStyle} background-color: #6c757d;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Anwesenheit</button>`;
+                actionButtons += `<button onclick="deleteUser(${user.id})" style="${btnStyle} background-color: #dc3545;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Löschen</button>`;
             } else if (user.role === 'admin') {
+                actionButtons += `<button onclick="viewUserHistory(${user.id})" style="${btnStyle} background-color: #007bff;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Verlauf</button>`;
                 if (adminCount > 1) {
-                    actionButtons += `<button onclick="demoteToStudent(${user.id})" class="btn-action btn-demote">Zu Cursant</button>`;
-                    actionButtons += `<button onclick="changeUserPassword(${user.id})" class="btn-action btn-password">Passwort</button>`;
-                    actionButtons += `<button onclick="deleteUser(${user.id})" class="btn-action btn-delete">Löschen</button>`;
-                } else {
-                    actionButtons = `<span style="color: #999; font-size: 12px;">letzter Admin</span>`;
+                    actionButtons += `<button onclick="demoteToStudent(${user.id})" style="${btnStyle} background-color: #ffc107; color: #333;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Zu Teilnehmer</button>`;
                 }
+                actionButtons += `<button onclick="renameUser(${user.id})" style="${btnStyle} background-color: #17a2b8;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Umbenennen</button>`;
+                actionButtons += `<button onclick="changeUserPassword(${user.id})" style="${btnStyle} background-color: #f8f9fa; color: #333; border: 1px solid #ccc;" onmouseover="this.style.backgroundColor='#e2e2e2'" onmouseout="this.style.backgroundColor='#f8f9fa'">Passwort</button>`;
+                actionButtons += `<button onclick="deleteUser(${user.id})" style="${btnStyle} background-color: #dc3545;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Löschen</button>`;
             }
+            
+            actionButtons += '</div>';
         } else {
-            actionButtons = `<span style="color: #667eea; font-weight: bold;">Du</span>`;
+            // MODIFICARE: Am schimbat textul pentru contul curent în 'Sysadmin'
+            actionButtons = '<span style="color:#28a745; font-size:12px; font-weight:bold; display:block; text-align:center; padding: 6px;">-</span>';
         }
 
         const row = document.createElement('tr');
-        const badgeColor = user.role === 'admin' ? 'role-admin' : 'role-student';
         row.innerHTML = `
-            <td><strong>${user.username}</strong></td>
-            <td><span class="role-badge ${badgeColor}">${user.role === 'admin' ? 'Admin' : 'Cursant'}</span></td>
-            <td>${createdDate}</td>
-            <td>${lastLogin}</td>
-            <td>${user.loginCount || 0}</td>
-            <td>${presentDays} Tag${presentDays !== 1 ? 'e' : ''}</td>
-            <td>${actionButtons}</td>
+            <td style="vertical-align: middle; text-align: center;"><strong>${user.username}</strong></td>
+            <td style="vertical-align: middle; text-align: center;"><span class="role-badge role-${user.role}">${user.role === 'admin' ? 'Admin' : 'Teilnehmer'}</span></td>
+            <td style="vertical-align: middle; text-align: center;">${presentDaysText}</td>
+            <td style="vertical-align: middle; text-align: center;">${createdDate}</td>
+            <td style="vertical-align: middle; text-align: center;">${lastLogin}</td>
+            <td style="vertical-align: middle; text-align: center; min-width: 320px;">${actionButtons}</td>
         `;
         usersTableBody.appendChild(row);
     });
 }
 
-// Handle export data
-function handleExportData() {
-    const format = document.querySelector('input[name="exportFormat"]:checked').value;
-    const range = document.querySelector('input[name="exportRange"]:checked').value;
+function viewUserHistory(userId) {
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+    
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
 
-    if (range === 'custom') {
-        const startDate = document.getElementById('exportStartDate').value;
-        const endDate = document.getElementById('exportEndDate').value;
+    const userAttendance = attendance[userId] || [];
+    const sortedAttendance = [...userAttendance].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        if (!startDate || !endDate) {
-            alert('Bitte wählen Sie Start- und Enddatum.');
-            return;
-        }
-
-        if (format === 'csv') {
-            exportToCSV(startDate, endDate);
-        } else {
-            exportToJSON(startDate, endDate);
-        }
+    let tableRows = '';
+    
+    if (sortedAttendance.length === 0) {
+        tableRows = '<tr><td colspan="4" style="text-align:center; padding: 15px;">Keine Daten vorhanden.</td></tr>';
     } else {
-        if (format === 'csv') {
-            exportToCSV(null, null, range);
-        } else {
-            exportToJSON(null, null, range);
-        }
+        sortedAttendance.forEach(record => {
+            const dateObj = new Date(record.date + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('de-DE');
+            
+            let statusHtml = '';
+            if (record.status === 'present') {
+                statusHtml = '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Anwesend</span>';
+            } else if (record.status === 'Verspätet') {
+                statusHtml = '<span style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Verspätet</span>';
+            } else {
+                statusHtml = '<span style="background:#f8d7da; color:#721c24; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Abwesend</span>';
+            }
+
+            tableRows += `
+                <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">${formattedDate}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">${statusHtml}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">${record.loginTime || '-'}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">${record.logoutTime || '-'}</td>
+                </tr>
+            `;
+        });
+    }
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="de">
+        <head>
+            <meta charset="UTF-8">
+            <title>Verlauf - ${user.username}</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; padding: 30px; margin: 0; color: #333; }
+                .container { background: white; max-width: 800px; margin: 0 auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+                h1 { margin-top: 0; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                .stats { margin-bottom: 20px; font-size: 14px; color: #666; }
+                table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 20px; }
+                th { background: #f8f9fa; padding: 12px; font-weight: 600; border-bottom: 2px solid #ddd; }
+                tbody tr:hover { background: #f1f3f5; }
+                button { margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+                button:hover { background: #5a6268; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Anwesenheitsprotokoll: ${user.username}</h1>
+                <div class="stats">
+                    Rolle: <strong>${user.role === 'admin' ? 'Administrator' : 'Teilnehmer'}</strong> | 
+                    Erfasst seit: <strong>${new Date(user.createdAt).toLocaleDateString('de-DE')}</strong>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Datum</th><th>Status</th><th>Ankunft</th><th>Gehen</th></tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+                <button onclick="window.close()">Fenster schließen</button>
+            </div>
+        </body>
+        </html>
+    `;
+
+    const newWindow = window.open('', '_blank', 'width=850,height=600');
+    if (newWindow) {
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+    } else {
+        alert("Bitte Pop-ups zulassen, um den Verlauf anzuzeigen.");
     }
 }
 
-// Export to CSV format
-function exportToCSV(startDate, endDate, range = 'all') {
+function renameUser(userId) {
     const users = JSON.parse(localStorage.getItem('users')) || [];
-    const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
-
-    let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Zeiterfassung Export\n';
-    csvContent += `Exportdatum: ${new Date().toLocaleString('de-DE')}\n\n`;
-
-    // Header row
-    csvContent += 'Benutzername,Rolle,Datum,Status,Uhrzeit\n';
-
-    users.forEach(user => {
-        const userAttendance = attendance[user.id] || [];
-
-        // Filter by date range
-        let filteredRecords = userAttendance;
-        if (range === 'month') {
-            const now = new Date();
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-            filteredRecords = userAttendance.filter(a => a.date >= monthStart && a.date <= monthEnd);
-        } else if (range === 'custom' && startDate && endDate) {
-            filteredRecords = userAttendance.filter(a => a.date >= startDate && a.date <= endDate);
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return;
+    
+    const user = users[userIndex];
+    const newUsername = prompt(`Neuen Benutzernamen für "${user.username}" eingeben:`, user.username);
+    
+    if (newUsername && newUsername.trim() !== '' && newUsername !== user.username) {
+        if (users.find(u => u.username.toLowerCase() === newUsername.trim().toLowerCase())) {
+            alert('Dieser Benutzername existiert bereits!');
+            return;
         }
-
-        filteredRecords.forEach(record => {
-            const date = new Date(record.date).toLocaleDateString('de-DE');
-            const time = record.loginTime || '-';
-            const status = record.status === 'present' ? 'Präsent' : 'Abwesend';
-            csvContent += `"${user.username}","${user.role}","${date}","${status}","${time}"\n`;
-        });
-    });
-
-    // Download CSV
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `zeiterfassung_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    alert('CSV erfolgreich exportiert!');
+        user.username = newUsername.trim();
+        users[userIndex] = user;
+        localStorage.setItem('users', JSON.stringify(users));
+        loadUsersTable();
+        alert('Benutzername erfolgreich geändert.');
+    }
 }
 
-// Export to JSON format
-function exportToJSON(startDate, endDate, range = 'all') {
+function editUserAttendance(userId) {
     const users = JSON.parse(localStorage.getItem('users')) || [];
-    const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
 
-    const exportData = {
-        exportDate: new Date().toISOString(),
-        exportRange: range,
-        users: users.map(u => ({
-            id: u.id,
-            username: u.username,
-            role: u.role,
-            createdAt: u.createdAt,
-            lastLogin: u.lastLogin,
-            loginCount: u.loginCount
-        })),
-        attendance: {}
-    };
-
-    users.forEach(user => {
-        const userAttendance = attendance[user.id] || [];
-        let filteredRecords = userAttendance;
-
-        if (range === 'month') {
-            const now = new Date();
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-            filteredRecords = userAttendance.filter(a => a.date >= monthStart && a.date <= monthEnd);
-        } else if (range === 'custom' && startDate && endDate) {
-            filteredRecords = userAttendance.filter(a => a.date >= startDate && a.date <= endDate);
-        }
-
-        exportData.attendance[user.id] = filteredRecords;
-    });
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `zeiterfassung_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-
-    alert('JSON erfolgreich exportiert!');
-}
-
-// Export daily report
-function exportDailyReport() {
-    const today = new Date().toISOString().split('T')[0];
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const attendance = JSON.parse(localStorage.getItem('attendance')) || [];
-
-    let reportContent = 'Tagesbericht Zeiterfassung\n';
-    reportContent += `Datum: ${new Date().toLocaleDateString('de-DE')}\n`;
-    reportContent += '='.repeat(50) + '\n\n';
-
-    let presentCount = 0;
-    let absentCount = 0;
-    const presentUsers = [];
-    const absentUsers = [];
-
-    users.forEach(user => {
-        const userAttendance = attendance[user.id] || [];
-        const todayRecord = userAttendance.find(a => a.date === today);
-
-        if (todayRecord && todayRecord.status === 'present') {
-            presentCount++;
-            presentUsers.push(`${user.username} (${todayRecord.loginTime || 'Auto'})`);
-        } else {
-            absentCount++;
-            absentUsers.push(user.username);
-        }
-    });
-
-    reportContent += `ANWESEND (${presentCount}):\n`;
-    presentUsers.forEach(u => reportContent += `  ✓ ${u}\n`);
-
-    reportContent += `\nABWESEND (${absentCount}):\n`;
-    absentUsers.forEach(u => reportContent += `  ✗ ${u}\n`);
-
-    // Download report
-    const dataBlob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `tagesbericht_${today}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-
-    alert('Tagesbericht exportiert!');
-}
-
-// Clear old data (GDPR compliance)
-function clearOldData() {
-    if (!confirm('Sind Sie sicher, dass Sie alle Daten älter als 90 Tage löschen möchten? Dies kann nicht rückgängig gemacht werden.')) {
+    const dateStr = prompt(`Für welches Datum möchtest du die Anwesenheit bearbeiten?\nFormat: YYYY-MM-DD`, new Date().toISOString().split('T')[0]);
+    if (!dateStr || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if(dateStr) alert("Ungültiges Datumsformat.");
         return;
     }
 
+    const newStatus = prompt(`Neuer Status für den ${dateStr}:\nBitte eingeben: 1 für Anwesend, 2 für Abwesend, 3 für Verspätet`, "1");
+    let statusText = '';
+    if (newStatus === "1") statusText = 'present';
+    else if (newStatus === "2") statusText = 'absent';
+    else if (newStatus === "3") statusText = 'Verspätet';
+    else { alert("Abgebrochen."); return; }
+
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const cutoffDate = ninetyDaysAgo.toISOString().split('T')[0];
-
-    let deletedCount = 0;
-
-    for (const userId in attendance) {
-        const before = attendance[userId].length;
-        attendance[userId] = attendance[userId].filter(a => a.date >= cutoffDate);
-        deletedCount += before - attendance[userId].length;
+    if (!attendance[user.id]) attendance[user.id] = [];
+    
+    const existingIndex = attendance[user.id].findIndex(a => a.date === dateStr);
+    if (existingIndex >= 0) {
+        attendance[user.id][existingIndex].status = statusText;
+        attendance[user.id][existingIndex].autoMarked = false;
+        attendance[user.id][existingIndex].loginTime = (statusText === 'absent') ? null : "Manuell korrigiert";
+    } else {
+        attendance[user.id].push({
+            date: dateStr,
+            status: statusText,
+            loginTime: (statusText === 'absent') ? null : "Manuell eingetragen",
+            logoutTime: null,
+            markedAt: new Date().toISOString(),
+            autoMarked: false
+        });
     }
 
     localStorage.setItem('attendance', JSON.stringify(attendance));
-    alert(`${deletedCount} alte Datensätze wurden gelöscht.`);
+    updateAdminOverview();
     loadUsersTable();
+    alert(`Aktualisiert.`);
 }
 
-// Update system settings display
-function updateSystemSettings() {
-    const pinEnabled = typeof ENABLE_DAILY_PIN !== 'undefined' ? ENABLE_DAILY_PIN : false;
-    const ipEnabled = typeof ENABLE_IP_VERIFICATION !== 'undefined' ? ENABLE_IP_VERIFICATION : false;
-    const autoDeleteEnabled = typeof ENABLE_DATA_AUTO_DELETE !== 'undefined' ? ENABLE_DATA_AUTO_DELETE : false;
-
-    document.getElementById('pinStatus').textContent = pinEnabled ? '✓ Aktiviert' : '✗ Deaktiviert';
-    document.getElementById('ipStatus').textContent = ipEnabled ? '✓ Aktiviert' : '✗ Deaktiviert';
-    document.getElementById('autoDeleteStatus').textContent = autoDeleteEnabled ? '✓ Aktiviert' : '✗ Deaktiviert';
-}
-
-// Regenerate today's PIN (derzeit deaktiviert)
-function regenerateTodaysPIN() {
-    alert('PIN-System ist derzeit nicht aktiviert. Diese Funktion wird implementiert, wenn die notwendige Hardware vorhanden ist.');
-    // const pin = typeof generateDailyPIN !== 'undefined' ? generateDailyPIN() : null;
-    // if (pin) {
-    //     alert(`PIN für heute: ${pin}\n\nZeigen Sie diese Nummer in der Klassenzimmeranzeige an.`);
-    // } else {
-    //     alert('PIN-System ist nicht aktiviert.');
-    // }
-}
-
-// Export date range handler
-document.addEventListener('DOMContentLoaded', () => {
-    const customRadio = document.querySelector('input[value="custom"][name="exportRange"]');
-    const dateRangeGroup = document.getElementById('dateRangeGroup');
-
-    if (customRadio) {
-        document.querySelectorAll('input[name="exportRange"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.value === 'custom') {
-                    dateRangeGroup.style.display = 'block';
-                } else {
-                    dateRangeGroup.style.display = 'none';
-                }
-            });
-        });
+function promoteToAdmin(userId) {
+    if (confirm('Zum Administrator machen?')) {
+        changeUserRole(userId, 'admin');
     }
-});
+}
 
-// ===== USER MANAGEMENT (PASSWORT & LÖSCHEN) =====
+function demoteToStudent(userId) {
+    if (confirm('Rechte entziehen?')) {
+        changeUserRole(userId, 'student');
+    }
+}
 
-// Passwort eines Benutzers ändern
+function changeUserRole(userId, newRole) {
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+        users[userIndex].role = newRole;
+        localStorage.setItem('users', JSON.stringify(users));
+        updateAdminOverview();
+        loadUsersTable();
+    }
+}
+
 function changeUserPassword(userId) {
     const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.id === userId);
-
-    if (!user) {
-        alert('Benutzer nicht gefunden.');
-        return;
-    }
-
-    let newPassword = prompt(`Neues Passwort für "${user.username}" eingeben (mindestens 6 Zeichen):`);
-    if (newPassword === null) {
-        // Abgebrochen
-        return;
-    }
-    newPassword = newPassword.trim();
-
-    if (newPassword.length < 6) {
-        alert('Passwort muss mindestens 6 Zeichen lang sein.');
-        return;
-    }
-
-    const confirmPassword = prompt('Neues Passwort zur Bestätigung erneut eingeben:');
-    if (confirmPassword === null) {
-        return;
-    }
-
-    if (newPassword !== confirmPassword.trim()) {
-        alert('Passwörter stimmen nicht überein.');
-        return;
-    }
-
-    // Passwort hashen (gleiche Logik wie bei Registrierung/Login)
-    const hashedPassword = simpleHash(newPassword);
-
-    user.password = hashedPassword;
     const userIndex = users.findIndex(u => u.id === userId);
-    users[userIndex] = user;
-    localStorage.setItem('users', JSON.stringify(users));
-
-    // Falls aktuell eingeloggter User betroffen ist, currentUser aktualisieren
-    const currentUserStr = localStorage.getItem('currentUser');
-    if (currentUserStr) {
-        const currentUser = JSON.parse(currentUserStr);
-        if (currentUser.id === userId) {
-            currentUser.password = hashedPassword;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        }
+    if (userIndex === -1) return;
+    
+    const newPassword = prompt(`Neues Passwort eingeben (min. 6 Zeichen):`);
+    if (newPassword && newPassword.length >= 6) {
+        users[userIndex].password = simpleHash(newPassword);
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Passwort geändert.');
+    } else if (newPassword) {
+        alert('Passwort zu kurz.');
     }
-
-    alert(`Passwort für "${user.username}" wurde erfolgreich geändert.`);
 }
 
-// Benutzer löschen (inkl. Anwesenheitsdaten)
 function deleteUser(userId) {
     const users = JSON.parse(localStorage.getItem('users')) || [];
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) return;
+    
+    if (confirm(`ACHTUNG: Benutzer "${userToDelete.username}" endgültig löschen?`)) {
+        const updatedUsers = users.filter(u => u.id !== userId);
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        
+        const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+        delete attendance[userId];
+        localStorage.setItem('attendance', JSON.stringify(attendance));
+        
+        updateAdminOverview();
+        loadUsersTable();
+    }
+}
+
+function toggleDateInput() {
+    const rangeVal = document.querySelector('input[name="exportRange"]:checked').value;
+    const dateInput = document.getElementById('exportDate');
+    if (rangeVal === 'specific') {
+        dateInput.disabled = false;
+        if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+    } else {
+        dateInput.disabled = true;
+    }
+}
+
+function executeExport() {
+    const format = document.querySelector('input[name="exportFormat"]:checked').value;
+    const range = document.querySelector('input[name="exportRange"]:checked').value;
+    
+    let targetDate = null;
+    if (range === 'specific') {
+        targetDate = document.getElementById('exportDate').value;
+        if (!targetDate) { alert('Datum wählen.'); return; }
+    }
+    
+    const users = JSON.parse(localStorage.getItem('users')) || [];
     const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-    const currentUserStr = localStorage.getItem('currentUser');
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    
+    if (format === 'json') exportAsJSON(users, attendance, targetDate);
+    else exportAsCSV(users, attendance, targetDate);
+}
 
-    const user = users.find(u => u.id === userId);
-    if (!user) {
-        alert('Benutzer nicht gefunden.');
-        return;
-    }
-
-    // Selbstlöschung verhindern
-    if (currentUser && currentUser.id === userId) {
-        alert('Sie können Ihr eigenes Konto nicht aus dem Admin-Panel löschen.');
-        return;
-    }
-
-    // Letzten Admin schützen
-    if (user.role === 'admin') {
-        const adminCount = users.filter(u => u.role === 'admin').length;
-        if (adminCount <= 1) {
-            alert('Fehler: Sie können den letzten Admin nicht löschen.');
-            return;
+function exportAsJSON(users, attendance, targetDate) {
+    let exportData = {
+        exportDate: new Date().toISOString(),
+        type: targetDate ? 'daily_snapshot' : 'full_backup',
+        users: users.map(u => ({ id: u.id, username: u.username, role: u.role })),
+        attendance: {}
+    };
+    
+    if (targetDate) {
+        for (const userId in attendance) {
+            const dayRecord = attendance[userId].find(a => a.date === targetDate);
+            if (dayRecord) exportData.attendance[userId] = [dayRecord];
         }
+    } else {
+        exportData.attendance = attendance;
     }
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const fileName = targetDate ? `zeiterfassung_${targetDate}.json` : `zeiterfassung_backup_${new Date().toISOString().split('T')[0]}.json`;
+    triggerDownload(dataUri, fileName);
+}
 
-    if (!confirm(`Möchten Sie den Benutzer "${user.username}" und alle zugehörigen Anwesenheitsdaten wirklich löschen?`)) {
-        return;
+function exportAsCSV(users, attendance, targetDate) {
+    let csvContent = "Benutzername,Rolle,Datum,Status,Ankunft,Gehen\n";
+    users.forEach(user => {
+        if (user.role === 'admin') return;
+        const userAttendance = attendance[user.id] || [];
+        
+        if (targetDate) {
+            const dayRecord = userAttendance.find(a => a.date === targetDate);
+            if (dayRecord) csvContent += `${user.username},${user.role},${dayRecord.date},${dayRecord.status},${dayRecord.loginTime || '-'},${dayRecord.logoutTime || '-'}\n`;
+            else csvContent += `${user.username},${user.role},${targetDate},Fehlt,-,-\n`;
+        } else {
+            userAttendance.forEach(a => {
+                csvContent += `${user.username},${user.role},${a.date},${a.status},${a.loginTime || '-'},${a.logoutTime || '-'}\n`;
+            });
+        }
+    });
+    
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+    const fileName = targetDate ? `anwesenheit_${targetDate}.csv` : `anwesenheit_alle.csv`;
+    triggerDownload(dataUri, fileName);
+}
+
+function triggerDownload(dataUri, fileName) {
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', fileName);
+    document.body.appendChild(linkElement);
+    linkElement.click();
+    document.body.removeChild(linkElement);
+}
+
+function generateDailyReport() {
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+    const targetDate = document.getElementById('exportDate').disabled ? new Date().toISOString().split('T')[0] : (document.getElementById('exportDate').value || new Date().toISOString().split('T')[0]);
+        
+    let report = `Tagesbericht Zeiterfassung\nDatum: ${targetDate}\n==================================================\n\n`;
+    let presentUsers = [], verspaetetUsers = [], absentUsers = [];
+    
+    users.forEach(user => {
+        if (user.role === 'admin') return;
+        const dayRecord = (attendance[user.id] || []).find(a => a.date === targetDate);
+        if (!dayRecord || dayRecord.status === 'absent') absentUsers.push(user.username);
+        else if (dayRecord.status === 'Verspätet') verspaetetUsers.push(`${user.username} (Ankunft: ${dayRecord.loginTime || '?'})`);
+        else presentUsers.push(`${user.username} (Ankunft: ${dayRecord.loginTime || '?'})`);
+    });
+    
+    report += `ANWESEND (${presentUsers.length}):\n`; presentUsers.forEach(u => report += `  - ${u}\n`);
+    report += `\nVERSPÄTET (${verspaetetUsers.length}):\n`; verspaetetUsers.forEach(u => report += `  - ${u}\n`);
+    report += `\nABWESEND / FEHLT (${absentUsers.length}):\n`; absentUsers.forEach(u => report += `  - ${u}\n`);
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`<pre>${report}</pre>`);
+    printWindow.document.title = `Bericht_${targetDate}`;
+}
+
+function clearOldData() {
+    if (!confirm('Wirklich alte Daten (>90 Tage) löschen?')) return;
+    const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 90);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    
+    let deleted = 0;
+    for (const userId in attendance) {
+        const origLen = attendance[userId].length;
+        attendance[userId] = attendance[userId].filter(a => a.date >= cutoffStr);
+        deleted += (origLen - attendance[userId].length);
     }
-
-    const newUsers = users.filter(u => u.id !== userId);
-    delete attendance[userId];
-
-    localStorage.setItem('users', JSON.stringify(newUsers));
     localStorage.setItem('attendance', JSON.stringify(attendance));
-
-    alert(`Benutzer "${user.username}" wurde gelöscht.`);
-    loadUsersTable();
-}
-
-// ===== USER ROLE MANAGEMENT =====
-
-// Promote Student to Admin
-function promoteToAdmin(userId) {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.id === userId);
-
-    if (!user) {
-        alert('Benutzer nicht gefunden.');
-        return;
-    }
-
-    if (!confirm(`Möchten Sie "${user.username}" wirklich zum Admin befördern? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-        return;
-    }
-
-    // Promote to Admin
-    user.role = 'admin';
-    const userIndex = users.findIndex(u => u.id === userId);
-    users[userIndex] = user;
-    localStorage.setItem('users', JSON.stringify(users));
-
-    alert(`"${user.username}" wurde erfolgreich zum Admin befördert.`);
-    loadUsersTable();
-}
-
-// Demote Admin to Student
-function demoteToStudent(userId) {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.id === userId);
-
-    if (!user) {
-        alert('Benutzer nicht gefunden.');
-        return;
-    }
-
-    // Check if this is the last admin
-    const adminCount = users.filter(u => u.role === 'admin').length;
-    if (adminCount <= 1) {
-        alert('Fehler: Sie können den letzten Admin nicht degradieren.');
-        return;
-    }
-
-    if (!confirm(`Möchten Sie "${user.username}" wirklich zum Cursant zurückgestufen? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-        return;
-    }
-
-    // Demote to Student
-    user.role = 'student';
-    const userIndex = users.findIndex(u => u.id === userId);
-    users[userIndex] = user;
-    localStorage.setItem('users', JSON.stringify(users));
-
-    alert(`"${user.username}" wurde erfolgreich zum Cursant zurückgestuft.`);
-    loadUsersTable();
+    updateAdminOverview();
+    alert(`Bereinigung abgeschlossen. ${deleted} Datensätze gelöscht.`);
 }
