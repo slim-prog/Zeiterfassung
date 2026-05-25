@@ -1,291 +1,436 @@
-// Einfache Hash-Funktion für Passwörter
-function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
-}
+(function () {
+    "use strict";
 
-// Formularwechsel: Registrierung anzeigen
-function showRegister() {
-    document.getElementById('loginForm').closest('.login-box').classList.add('hidden');
-    document.getElementById('registerBox').classList.remove('hidden');
-}
-
-// Formularwechsel: Login anzeigen
-function showLogin() {
-    document.getElementById('loginForm').closest('.login-box').classList.remove('hidden');
-    document.getElementById('registerBox').classList.add('hidden');
-}
-
-// Registrierung verarbeiten
-function handleRegister(event) {
-    event.preventDefault();
-
-    const newUsername = document.getElementById('newUsername').value.trim();
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const errorDiv = document.getElementById('registerErrorMessage');
-
-    errorDiv.textContent = '';
-
-    // Validierung
-    if (newUsername.length < 3) {
-        errorDiv.textContent = 'Benutzername muss mindestens 3 Zeichen lang sein.';
-        return;
-    }
-
-    if (newPassword.length < 6) {
-        errorDiv.textContent = 'Passwort muss mindestens 6 Zeichen lang sein.';
-        return;
-    }
-
-    if (newPassword !== confirmPassword) {
-        errorDiv.textContent = 'Passwörter stimmen nicht überein.';
-        return;
-    }
-
-    // Prüfen, ob Benutzer existiert
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    if (users.find(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
-        errorDiv.textContent = 'Benutzername existiert bereits.';
-        return;
-    }
-
-    // Neuen Benutzer erstellen - IMMER als Student
-    const hashedPassword = simpleHash(newPassword);
-    const newUser = {
-        id: Date.now(),
-        username: newUsername,
-        password: hashedPassword,
-        role: 'student', 
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-        loginCount: 0
+    const STORAGE_KEYS = {
+        users: "users",
+        currentUser: "currentUser",
+        attendance: "attendanceData",
+        settings: "settings"
     };
 
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
+    const DEFAULT_USERS = [
+        {
+            id: 1,
+            username: "admin",
+            password: "admin123",
+            role: "admin",
+            createdAt: "2025-01-01T08:00:00.000Z",
+            lastLogin: null
+        },
+        {
+            id: 2,
+            username: "student",
+            password: "student123",
+            role: "student",
+            createdAt: "2025-01-01T08:00:00.000Z",
+            lastLogin: null
+        }
+    ];
 
-    // Leeres Anwesenheitsobjekt initialisieren
-    const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-    if (!attendance[newUser.id]) {
-        attendance[newUser.id] = [];
-    }
-    localStorage.setItem('attendance', JSON.stringify(attendance));
+    const DEFAULT_SETTINGS = {
+        schoolStartTime: "08:00",
+        lateThresholdMinutes: 15,
+        autoAbsentAfter: "08:15",
+        retentionDays: 90
+    };
 
-    // Erfolgsmeldung
-    alert('Konto erfolgreich erstellt! Bitte melde dich an.');
-    showLogin();
-    document.getElementById('registerForm').reset();
-}
-
-// Login verarbeiten
-function handleLogin(event) {
-    event.preventDefault();
-
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('errorMessage');
-
-    errorDiv.textContent = '';
-
-    // Benutzer aus localStorage abrufen
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const user = users.find(u => u.username === username);
-
-    if (!user) {
-        errorDiv.textContent = 'Benutzer nicht gefunden.';
-        return;
-    }
-
-    const hashedPassword = simpleHash(password);
-    if (user.password !== hashedPassword) {
-        errorDiv.textContent = 'Passwort ist falsch.';
-        return;
-    }
-
-    // IP Verifikation (falls aktiviert)
-    if (typeof ENABLE_IP_VERIFICATION !== 'undefined' && ENABLE_IP_VERIFICATION) {
-        if (!verifyIPAddress()) {
-            errorDiv.textContent = 'Fehler: Sie müssen sich aus dem Büronetzwerk anmelden.';
-            return;
+    function safeJsonParse(value, fallback) {
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return fallback;
         }
     }
 
-    // --- NEUE ANWESENHEITSLOGIK ---
-    if (user.role === 'student') {
+    function getUsers() {
+        return safeJsonParse(localStorage.getItem(STORAGE_KEYS.users), []);
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+    }
+
+    function getAttendance() {
+        return safeJsonParse(localStorage.getItem(STORAGE_KEYS.attendance), []);
+    }
+
+    function saveAttendance(data) {
+        localStorage.setItem(STORAGE_KEYS.attendance, JSON.stringify(data));
+    }
+
+    function getSettings() {
+        const settings = safeJsonParse(localStorage.getItem(STORAGE_KEYS.settings), null);
+        return settings && typeof settings === "object"
+            ? { ...DEFAULT_SETTINGS, ...settings }
+            : { ...DEFAULT_SETTINGS };
+    }
+
+    function saveSettings(settings) {
+        localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
+    }
+
+    function getCurrentUser() {
+        return safeJsonParse(localStorage.getItem(STORAGE_KEYS.currentUser), null);
+    }
+
+    function setCurrentUser(user) {
+        localStorage.setItem(STORAGE_KEYS.currentUser, JSON.stringify(user));
+    }
+
+    function clearCurrentUser() {
+        localStorage.removeItem(STORAGE_KEYS.currentUser);
+    }
+
+    function ensureInitialData() {
+        const users = getUsers();
+        if (!Array.isArray(users) || users.length === 0) {
+            saveUsers(DEFAULT_USERS);
+        }
+
+        const attendance = getAttendance();
+        if (!Array.isArray(attendance)) {
+            saveAttendance([]);
+        }
+
+        const settings = safeJsonParse(localStorage.getItem(STORAGE_KEYS.settings), null);
+        if (!settings || typeof settings !== "object") {
+            saveSettings(DEFAULT_SETTINGS);
+        }
+    }
+
+    function getTodayDateString() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function getTimeString(date = new Date()) {
+        return date.toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    function toMinutes(timeString) {
+        if (!timeString || typeof timeString !== "string" || !timeString.includes(":")) {
+            return null;
+        }
+
+        const [hours, minutes] = timeString.split(":").map(Number);
+        if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+            return null;
+        }
+
+        return hours * 60 + minutes;
+    }
+
+    function getCurrentMinutes() {
         const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        const totalMinutes = (hours * 60) + minutes;
-        
-        // 07:00 = 420 Minuten | 08:15 = 495 Minuten
-        const START_TIME = 420; 
-        const DEADLINE_TIME = 495;
+        return now.getHours() * 60 + now.getMinutes();
+    }
 
-        // Vor 07:00 Uhr Login blockieren
-        if (totalMinutes < START_TIME) {
-            errorDiv.textContent = 'Die Anwesenheitserfassung startet erst um 07:00 Uhr.';
+    function calculateStatusForLogin() {
+        const settings = getSettings();
+        const autoAbsentAfter = toMinutes(settings.autoAbsentAfter);
+        const nowMinutes = getCurrentMinutes();
+
+        if (autoAbsentAfter !== null && nowMinutes > autoAbsentAfter) {
+            return "Verspätet";
+        }
+
+        return "present";
+    }
+
+    function findTodayAttendanceForUser(username) {
+        const today = getTodayDateString();
+        const attendance = getAttendance();
+        return attendance.find(
+            (entry) => entry.username === username && entry.date === today
+        ) || null;
+    }
+
+    function hasOpenAttendance(username) {
+        const todayEntry = findTodayAttendanceForUser(username);
+        if (!todayEntry) return false;
+
+        return (
+            todayEntry.status !== "Abwesend" &&
+            !todayEntry.logoutTime
+        );
+    }
+
+    function upsertTodayAttendance(username) {
+        const today = getTodayDateString();
+        const currentTime = getTimeString();
+        const attendance = getAttendance();
+
+        const existingIndex = attendance.findIndex(
+            (entry) => entry.username === username && entry.date === today
+        );
+
+        const loginStatus = calculateStatusForLogin();
+
+        if (existingIndex >= 0) {
+            const existing = attendance[existingIndex];
+
+            if (existing.status === "Abwesend") {
+                attendance[existingIndex] = {
+                    ...existing,
+                    status: loginStatus,
+                    loginTime: currentTime,
+                    logoutTime: null
+                };
+            } else if (!existing.loginTime) {
+                attendance[existingIndex] = {
+                    ...existing,
+                    status: loginStatus,
+                    loginTime: currentTime
+                };
+            }
+
+            saveAttendance(attendance);
+            return attendance[existingIndex];
+        }
+
+        const newEntry = {
+            id: Date.now(),
+            username,
+            date: today,
+            status: loginStatus,
+            loginTime: currentTime,
+            logoutTime: null,
+            createdAt: new Date().toISOString()
+        };
+
+        attendance.push(newEntry);
+        saveAttendance(attendance);
+        return newEntry;
+    }
+
+    function markAbsentUsersForToday() {
+        const users = getUsers();
+        const attendance = getAttendance();
+        const today = getTodayDateString();
+        const settings = getSettings();
+        const autoAbsentAfter = toMinutes(settings.autoAbsentAfter);
+        const nowMinutes = getCurrentMinutes();
+
+        if (autoAbsentAfter === null || nowMinutes <= autoAbsentAfter) {
             return;
         }
 
-        const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
-        if (!attendance[user.id]) attendance[user.id] = [];
-        
-        const today = now.toISOString().split('T')[0];
-        const existingRecord = attendance[user.id].find(a => a.date === today);
-        const loginTimeString = now.toLocaleTimeString('de-DE');
+        let changed = false;
 
-        if (!existingRecord) {
-            // Noch kein Eintrag heute
-            const statusForToday = totalMinutes <= DEADLINE_TIME ? 'present' : 'Verspätet';
-            
-            attendance[user.id].push({
-                date: today,
-                status: statusForToday,
-                loginTime: loginTimeString,
-                logoutTime: null, // Für die neue Gehen-Funktion vorbereitet
-                markedAt: now.toISOString(),
-                autoMarked: false
+        users
+            .filter((user) => user.role === "student")
+            .forEach((user) => {
+                const exists = attendance.some(
+                    (entry) => entry.username === user.username && entry.date === today
+                );
+
+                if (!exists) {
+                    attendance.push({
+                        id: Date.now() + Math.floor(Math.random() * 10000),
+                        username: user.username,
+                        date: today,
+                        status: "Abwesend",
+                        loginTime: null,
+                        logoutTime: null,
+                        createdAt: new Date().toISOString()
+                    });
+                    changed = true;
+                }
             });
-        } else if (existingRecord.status === 'absent') {
-            // Wurde automatisch abwesend markiert, loggt sich aber jetzt ein -> Verspätet
-            existingRecord.status = 'Verspätet';
-            existingRecord.loginTime = loginTimeString;
-            existingRecord.autoMarked = false;
-        }
-        // Wenn bereits present oder Verspätet, wird nichts überschrieben (verhindert Dubletten)
 
-        localStorage.setItem('attendance', JSON.stringify(attendance));
-    }
-
-    // Benutzer-Login-Statistik aktualisieren
-    user.lastLogin = new Date().toISOString();
-    user.loginCount = (user.loginCount || 0) + 1;
-    const userIndex = users.findIndex(u => u.id === user.id);
-    users[userIndex] = user;
-    localStorage.setItem('users', JSON.stringify(users));
-
-    // Login erfolgreich
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    
-    // Weiterleitung basierend auf Rolle
-    if (user.role === 'admin') {
-        window.location.href = 'admin.html';
-    } else {
-        window.location.href = 'dashboard.html';
-    }
-}
-
-// Logout verarbeiten
-function handleLogout() {
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
-}
-
-// ===== SICHERHEITSFUNKTIONEN =====
-
-// IP Adresse prüfen (Platzhalter)
-function verifyIPAddress() {
-    const allowedIPs = typeof ALLOWED_IP_RANGES !== 'undefined' ? ALLOWED_IP_RANGES : [];
-    if (!allowedIPs || allowedIPs.length === 0) return true; 
-    console.log('IP-Prüfung würde im Produktionsbetrieb über ein Backend erfolgen');
-    return true;
-}
-
-// Admin-Rechte prüfen
-function isAdmin(user) {
-    return user && user.role === 'admin';
-}
-
-// Rollenrechte prüfen
-function hasPermission(user, permission) {
-    if (!user || !user.role) return false;
-    const permissions = typeof ROLE_PERMISSIONS !== 'undefined' ? ROLE_PERMISSIONS[user.role] : {};
-    return permissions[permission] === true;
-}
-
-// Seitenaufruf-Prüfung und Initialisierung
-window.addEventListener('load', () => {
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const currentUserStr = localStorage.getItem('currentUser');
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
-
-    // Geschützte Seiten absichern
-    if ((currentPage === 'dashboard.html' || currentPage === 'admin.html') && !currentUser) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    if (currentPage === 'admin.html' && currentUser && currentUser.role !== 'admin') {
-        window.location.href = 'dashboard.html';
-        return;
-    }
-
-    // Wenn eingeloggt, Login-Seite überspringen
-    if ((currentPage === 'index.html' || currentPage === '') && currentUser) {
-        if (currentUser.role === 'admin') {
-            window.location.href = 'admin.html';
-        } else {
-            window.location.href = 'dashboard.html';
-        }
-        return;
-    }
-
-    // Login-Felder leeren
-    if (currentPage === 'index.html' || currentPage === '') {
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.reset();
-            const usernameField = document.getElementById('username');
-            const passwordField = document.getElementById('password');
-            if (usernameField) usernameField.value = '';
-            if (passwordField) passwordField.value = '';
+        if (changed) {
+            saveAttendance(attendance);
         }
     }
 
-    // Automatische Abwesenheit prüfen
-    checkAndMarkAutoAbsent();
-});
+    function cleanupOldAttendance() {
+        const attendance = getAttendance();
+        const settings = getSettings();
+        const retentionDays = Number(settings.retentionDays) || 90;
 
-// Auto-Absent Logik (Angepasst auf > 08:15 Uhr)
-function checkAndMarkAutoAbsent() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const totalMinutes = (hours * 60) + minutes;
-    
-    // Nach 08:15 (495 Minuten) automatisch abwesend markieren
-    if (totalMinutes > 495) {
-        const today = now.toISOString().split('T')[0];
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        const attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() - retentionDays);
 
-        users.forEach(user => {
-            if (user.role !== 'student') return;
-
-            if (!attendance[user.id]) attendance[user.id] = [];
-            const todayRecord = attendance[user.id].find(a => a.date === today);
-
-            // Wenn bis jetzt kein Eintrag existiert -> absent
-            if (!todayRecord) {
-                attendance[user.id].push({
-                    date: today,
-                    status: 'absent',
-                    loginTime: null,
-                    logoutTime: null,
-                    markedAt: now.toISOString(),
-                    autoMarked: true
-                });
-            }
+        const filtered = attendance.filter((entry) => {
+            if (!entry.date) return false;
+            const entryDate = new Date(`${entry.date}T00:00:00`);
+            return entryDate >= thresholdDate;
         });
 
-        localStorage.setItem('attendance', JSON.stringify(attendance));
+        saveAttendance(filtered);
     }
-}
 
-console.log('Auth System Initialisiert (Neue Regeln: 07:00 - 08:15)');
+    function updateLastLogin(username) {
+        const users = getUsers();
+        const userIndex = users.findIndex((user) => user.username === username);
+
+        if (userIndex === -1) return null;
+
+        users[userIndex].lastLogin = new Date().toISOString();
+        saveUsers(users);
+
+        return users[userIndex];
+    }
+
+    function sanitizeUser(user) {
+        if (!user) return null;
+
+        return {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            createdAt: user.createdAt || null,
+            lastLogin: user.lastLogin || null
+        };
+    }
+
+    function login(username, password) {
+        if (!username || !password) {
+            return { success: false, message: "Benutzername und Passwort sind erforderlich." };
+        }
+
+        markAbsentUsersForToday();
+
+        const users = getUsers();
+        const user = users.find(
+            (entry) => entry.username === username && entry.password === password
+        );
+
+        if (!user) {
+            return { success: false, message: "Ungültiger Benutzername oder Passwort." };
+        }
+
+        const updatedUser = updateLastLogin(user.username);
+        const safeUser = sanitizeUser(updatedUser || user);
+
+        setCurrentUser(safeUser);
+
+        if (safeUser.role === "student") {
+            if (!hasOpenAttendance(safeUser.username)) {
+                upsertTodayAttendance(safeUser.username);
+            }
+        }
+
+        return {
+            success: true,
+            message: "Login erfolgreich.",
+            user: safeUser
+        };
+    }
+
+    function logout() {
+        clearCurrentUser();
+        window.location.href = "index.html";
+    }
+
+    function requireAuth() {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = "index.html";
+            return null;
+        }
+        return currentUser;
+    }
+
+    function requireAdmin() {
+        const currentUser = requireAuth();
+        if (!currentUser) return null;
+
+        if (currentUser.role !== "admin") {
+            window.location.href = "dashboard.html";
+            return null;
+        }
+
+        return currentUser;
+    }
+
+    function requireStudent() {
+        const currentUser = requireAuth();
+        if (!currentUser) return null;
+
+        if (currentUser.role !== "student") {
+            window.location.href = "admin.html";
+            return null;
+        }
+
+        return currentUser;
+    }
+
+    function handleLoginFormSubmit(event) {
+        event.preventDefault();
+
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const errorBox = document.getElementById("errorMessage");
+
+        const username = usernameInput ? usernameInput.value.trim() : "";
+        const password = passwordInput ? passwordInput.value : "";
+
+        const result = login(username, password);
+
+        if (!result.success) {
+            if (errorBox) {
+                errorBox.textContent = result.message;
+                errorBox.style.display = "block";
+            } else {
+                alert(result.message);
+            }
+            return;
+        }
+
+        if (errorBox) {
+            errorBox.textContent = "";
+            errorBox.style.display = "none";
+        }
+
+        if (result.user.role === "admin") {
+            window.location.href = "admin.html";
+        } else {
+            window.location.href = "dashboard.html";
+        }
+    }
+
+    function attachLoginFormHandler() {
+        const loginForm = document.getElementById("loginForm");
+        if (!loginForm) return;
+
+        loginForm.addEventListener("submit", handleLoginFormSubmit);
+    }
+
+    ensureInitialData();
+    cleanupOldAttendance();
+    markAbsentUsersForToday();
+    attachLoginFormHandler();
+
+    window.Auth = {
+        getUsers,
+        saveUsers,
+        getAttendance,
+        saveAttendance,
+        getSettings,
+        saveSettings,
+        getCurrentUser,
+        setCurrentUser,
+        clearCurrentUser,
+        login,
+        logout,
+        requireAuth,
+        requireAdmin,
+        requireStudent,
+        markAbsentUsersForToday,
+        cleanupOldAttendance,
+        upsertTodayAttendance,
+        findTodayAttendanceForUser,
+        getTodayDateString,
+        getTimeString,
+        sanitizeUser
+    };
+
+    window.handleLogout = logout;
+})();

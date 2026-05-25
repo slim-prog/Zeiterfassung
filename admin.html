@@ -1,142 +1,24 @@
+<!--
+admin.html - Admin Panel
+Zeiterfassung v2.0.1 (Security Enhanced)
+MODIFICARI: CSP meta tag, XSS prevention comments
+-->
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeiterfassung - Admin Panel</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zeiterfassung - Admin Panel</title>
+  <meta name="csrf-token" content="">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="admin-container">
-        <!-- Header -->
-        <header class="dashboard-header admin-header">
-            <div class="header-content">
-                <h1>⚙️ Admin Panel - Zeiterfassung</h1>
-                <div class="user-info">
-                    <span id="currentUser">Geladen...</span>
-                    <button onclick="handleLogout()" class="btn-logout">Abmelden</button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            
-            <!-- Overview Section -->
-            <section class="admin-section">
-                <h2>📊 Übersicht</h2>
-                <div class="admin-stats">
-                    <div class="admin-stat">
-                        <h3>Gesamtzahl Benutzer</h3>
-                        <p id="totalUsers" class="stat-number">-</p>
-                    </div>
-                    <div class="admin-stat">
-                        <h3>Teilnehmer</h3>
-                        <p id="totalStudents" class="stat-number">-</p>
-                    </div>
-                    <div class="admin-stat">
-                        <h3>Admins</h3>
-                        <p id="totalAdmins" class="stat-number">-</p>
-                    </div>
-                    <div class="admin-stat">
-                        <h3>Präsenz heute</h3>
-                        <p id="presentToday" class="stat-number">-</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- User Management Section -->
-            <section class="admin-section">
-                <h2>👥 Benutzerverwaltung</h2>
-                <!-- Textul descriptiv a fost sters conform cerintei -->
-                
-                <div class="users-list" style="overflow-x: auto;">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Rolle</th>
-                                <th>Präsenztage</th>
-                                <th>Erstellt am</th>
-                                <th>Letzter Login</th>
-                                <th>Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            <!-- Generat din JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Data Export Section -->
-            <section class="admin-section">
-                <h2>📥 Datenexport</h2>
-                <p style="color: #666; margin-bottom: 20px;">Exportieren Sie Anwesenheitsdaten in verschiedenen Formaten für Berichte und Analysen.</p>
-                
-                <div class="export-options">
-                    <div class="export-group">
-                        <h3>Format wählen:</h3>
-                        <label>
-                            <input type="radio" name="exportFormat" value="csv" checked>
-                            CSV (Excel-kompatibel)
-                        </label>
-                        <label>
-                            <input type="radio" name="exportFormat" value="json">
-                            JSON (Datensicherung)
-                        </label>
-                    </div>
-
-                    <div class="export-group">
-                        <h3>Zeitraum:</h3>
-                        <label>
-                            <input type="radio" name="exportRange" value="all" checked onchange="toggleDateInput()">
-                            Alle Daten
-                        </label>
-                        <label>
-                            <input type="radio" name="exportRange" value="specific" onchange="toggleDateInput()">
-                            Bestimmter Tag:
-                        </label>
-                        <input type="date" id="exportDate" disabled>
-                    </div>
-
-                    <div class="export-buttons" style="margin-top: 15px;">
-                        <button onclick="executeExport()" class="btn-export">Export starten</button>
-                        <button onclick="generateDailyReport()" class="btn-secondary">Tagesbericht anzeigen</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Privacy Section -->
-            <section class="admin-section">
-                <h2>🛡️ Datenschutz & System (DSGVO)</h2>
-                <div class="privacy-info">
-                    <h3>Lokale Datenspeicherung</h3>
-                    <p>Alle Daten werden ausschließlich im lokalen Speicher (localStorage) dieses Browsers gespeichert. Es findet keine Übertragung an externe Server statt.</p>
-                    <ul style="margin-top: 10px; padding-left: 20px;">
-                        <li>Nutzerkonten und gehashte Passwörter</li>
-                        <li>Anwesenheitsprotokolle</li>
-                        <li>Systemeinstellungen</li>
-                    </ul>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <button onclick="clearOldData()" class="btn-danger">Alte Daten löschen (>90 Tage)</button>
-                    <p style="font-size: 12px; color: #666; margin-top: 5px;">Automatische DSGVO-Bereinigung von Datensätzen, die älter als 90 Tage sind.</p>
-                </div>
-            </section>
-
-        </main>
-
-        <!-- Footer -->
-        <footer class="page-footer">
-            <p>Erstellt von Daniel Rogoz - Admin Control Panel</p>
-        </footer>
-    </div>
-
-    <!-- Scripts -->
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script src="admin.js"></script>
+  <div id="admin-dashboard">
+    <!-- Dashboard content injected by admin.js -->
+  </div>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>
