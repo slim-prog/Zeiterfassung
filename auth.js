@@ -435,29 +435,18 @@
     // LOGIN-FORMULAR HANDLER
     // ─────────────────────────────────────────────
 
+    // Ersetze handleLoginFormSubmit:
     async function handleLoginFormSubmit(event) {
         event.preventDefault();
 
         const usernameInput = document.getElementById("username");
         const passwordInput = document.getElementById("password");
         const errorBox = document.getElementById("errorMessage");
-        const submitBtn = event.target.querySelector("button[type='submit']");
 
         const username = usernameInput ? usernameInput.value.trim() : "";
         const password = passwordInput ? passwordInput.value : "";
 
-        // Button während async-Verarbeitung deaktivieren
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Wird geprüft...";
-        }
-
         const result = await login(username, password);
-
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Anmelden";
-        }
 
         if (!result.success) {
             if (errorBox) {
