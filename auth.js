@@ -1,6 +1,12 @@
 (function () {
     "use strict";
 
+    // ─────────────────────────────────────────────
+    // SHA-256 Hashes der Standard-Passwörter:
+    //   admin123   → 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a
+    //   student123 → ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f
+    // ─────────────────────────────────────────────
+
     const STORAGE_KEYS = {
         users: "users",
         currentUser: "currentUser",
@@ -12,7 +18,7 @@
         {
             id: 1,
             username: "admin",
-            password: "admin123",
+            passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a",
             role: "admin",
             createdAt: "2025-01-01T08:00:00.000Z",
             lastLogin: null
@@ -20,7 +26,7 @@
         {
             id: 2,
             username: "student",
-            password: "student123",
+            passwordHash: "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
             role: "student",
             createdAt: "2025-01-01T08:00:00.000Z",
             lastLogin: null
@@ -34,13 +40,33 @@
         retentionDays: 90
     };
 
+    // ─────────────────────────────────────────────
+    // HILFSFUNKTIONEN
+    // ─────────────────────────────────────────────
+
     function safeJsonParse(value, fallback) {
         try {
             return JSON.parse(value);
-        } catch (error) {
+        } catch (e) {
             return fallback;
         }
     }
+
+    async function hashPassword(password) {
+        if (!window.crypto || !window.crypto.subtle) {
+            console.error("Web Crypto API nicht verfügbar.");
+            return null;
+        }
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    // ─────────────────────────────────────────────
+    // STORAGE – BENUTZER
+    // ─────────────────────────────────────────────
 
     function getUsers() {
         return safeJsonParse(localStorage.getItem(STORAGE_KEYS.users), []);
@@ -50,6 +76,10 @@
         localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
     }
 
+    // ─────────────────────────────────────────────
+    // STORAGE – ANWESENHEIT
+    // ─────────────────────────────────────────────
+
     function getAttendance() {
         return safeJsonParse(localStorage.getItem(STORAGE_KEYS.attendance), []);
     }
@@ -57,6 +87,10 @@
     function saveAttendance(data) {
         localStorage.setItem(STORAGE_KEYS.attendance, JSON.stringify(data));
     }
+
+    // ─────────────────────────────────────────────
+    // STORAGE – EINSTELLUNGEN
+    // ─────────────────────────────────────────────
 
     function getSettings() {
         const settings = safeJsonParse(localStorage.getItem(STORAGE_KEYS.settings), null);
@@ -69,6 +103,10 @@
         localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
     }
 
+    // ─────────────────────────────────────────────
+    // STORAGE – AKTUELLER BENUTZER (SESSION)
+    // ─────────────────────────────────────────────
+
     function getCurrentUser() {
         return safeJsonParse(localStorage.getItem(STORAGE_KEYS.currentUser), null);
     }
@@ -80,6 +118,10 @@
     function clearCurrentUser() {
         localStorage.removeItem(STORAGE_KEYS.currentUser);
     }
+
+    // ─────────────────────────────────────────────
+    // INITIALISIERUNG
+    // ─────────────────────────────────────────────
 
     function ensureInitialData() {
         const users = getUsers();
@@ -97,6 +139,10 @@
             saveSettings(DEFAULT_SETTINGS);
         }
     }
+
+    // ─────────────────────────────────────────────
+    // DATUM / ZEIT HILFSFUNKTIONEN
+    // ─────────────────────────────────────────────
 
     function getTodayDateString() {
         const today = new Date();
@@ -117,12 +163,10 @@
         if (!timeString || typeof timeString !== "string" || !timeString.includes(":")) {
             return null;
         }
-
         const [hours, minutes] = timeString.split(":").map(Number);
         if (Number.isNaN(hours) || Number.isNaN(minutes)) {
             return null;
         }
-
         return hours * 60 + minutes;
     }
 
@@ -130,6 +174,10 @@
         const now = new Date();
         return now.getHours() * 60 + now.getMinutes();
     }
+
+    // ─────────────────────────────────────────────
+    // ANWESENHEITS-LOGIK
+    // ─────────────────────────────────────────────
 
     function calculateStatusForLogin() {
         const settings = getSettings();
@@ -139,7 +187,6 @@
         if (autoAbsentAfter !== null && nowMinutes > autoAbsentAfter) {
             return "Verspätet";
         }
-
         return "present";
     }
 
@@ -154,11 +201,7 @@
     function hasOpenAttendance(username) {
         const todayEntry = findTodayAttendanceForUser(username);
         if (!todayEntry) return false;
-
-        return (
-            todayEntry.status !== "Abwesend" &&
-            !todayEntry.logoutTime
-        );
+        return todayEntry.status !== "Abwesend" && !todayEntry.logoutTime;
     }
 
     function upsertTodayAttendance(username) {
@@ -266,21 +309,22 @@
         saveAttendance(filtered);
     }
 
+    // ─────────────────────────────────────────────
+    // BENUTZER-VERWALTUNG
+    // ─────────────────────────────────────────────
+
     function updateLastLogin(username) {
         const users = getUsers();
         const userIndex = users.findIndex((user) => user.username === username);
-
         if (userIndex === -1) return null;
 
         users[userIndex].lastLogin = new Date().toISOString();
         saveUsers(users);
-
         return users[userIndex];
     }
 
     function sanitizeUser(user) {
         if (!user) return null;
-
         return {
             id: user.id,
             username: user.username,
@@ -290,7 +334,11 @@
         };
     }
 
-    function login(username, password) {
+    // ─────────────────────────────────────────────
+    // AUTHENTIFIZIERUNG
+    // ─────────────────────────────────────────────
+
+    async function login(username, password) {
         if (!username || !password) {
             return { success: false, message: "Benutzername und Passwort sind erforderlich." };
         }
@@ -298,12 +346,35 @@
         markAbsentUsersForToday();
 
         const users = getUsers();
-        const user = users.find(
-            (entry) => entry.username === username && entry.password === password
-        );
+        const user = users.find((entry) => entry.username === username);
 
         if (!user) {
             return { success: false, message: "Ungültiger Benutzername oder Passwort." };
+        }
+
+        const inputHash = await hashPassword(password);
+        if (!inputHash) {
+            return { success: false, message: "Interner Fehler beim Passwort-Hashing." };
+        }
+
+        // Rückwärtskompatibilität: altes Klartext-Passwort akzeptieren und migrieren
+        const hasLegacyPassword = user.password && !user.passwordHash;
+        const hashMatches = user.passwordHash && user.passwordHash === inputHash;
+        const legacyMatches = hasLegacyPassword && user.password === password;
+
+        if (!hashMatches && !legacyMatches) {
+            return { success: false, message: "Ungültiger Benutzername oder Passwort." };
+        }
+
+        // Migration: Klartext-Passwort durch Hash ersetzen
+        if (legacyMatches) {
+            const allUsers = getUsers();
+            const idx = allUsers.findIndex(u => u.username === username);
+            if (idx !== -1) {
+                allUsers[idx].passwordHash = inputHash;
+                delete allUsers[idx].password;
+                saveUsers(allUsers);
+            }
         }
 
         const updatedUser = updateLastLogin(user.username);
@@ -346,7 +417,6 @@
             window.location.href = "dashboard.html";
             return null;
         }
-
         return currentUser;
     }
 
@@ -358,21 +428,36 @@
             window.location.href = "admin.html";
             return null;
         }
-
         return currentUser;
     }
 
-    function handleLoginFormSubmit(event) {
+    // ─────────────────────────────────────────────
+    // LOGIN-FORMULAR HANDLER
+    // ─────────────────────────────────────────────
+
+    async function handleLoginFormSubmit(event) {
         event.preventDefault();
 
         const usernameInput = document.getElementById("username");
         const passwordInput = document.getElementById("password");
         const errorBox = document.getElementById("errorMessage");
+        const submitBtn = event.target.querySelector("button[type='submit']");
 
         const username = usernameInput ? usernameInput.value.trim() : "";
         const password = passwordInput ? passwordInput.value : "";
 
-        const result = login(username, password);
+        // Button während async-Verarbeitung deaktivieren
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Wird geprüft...";
+        }
+
+        const result = await login(username, password);
+
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Anmelden";
+        }
 
         if (!result.success) {
             if (errorBox) {
@@ -399,14 +484,21 @@
     function attachLoginFormHandler() {
         const loginForm = document.getElementById("loginForm");
         if (!loginForm) return;
-
         loginForm.addEventListener("submit", handleLoginFormSubmit);
     }
+
+    // ─────────────────────────────────────────────
+    // BOOTSTRAP
+    // ─────────────────────────────────────────────
 
     ensureInitialData();
     cleanupOldAttendance();
     markAbsentUsersForToday();
     attachLoginFormHandler();
+
+    // ─────────────────────────────────────────────
+    // ÖFFENTLICHE API
+    // ─────────────────────────────────────────────
 
     window.Auth = {
         getUsers,
@@ -429,7 +521,8 @@
         findTodayAttendanceForUser,
         getTodayDateString,
         getTimeString,
-        sanitizeUser
+        sanitizeUser,
+        hashPassword
     };
 
     window.handleLogout = logout;

@@ -1,5 +1,6 @@
 fastapi
 uvicorn
 passlib[bcrypt]
-PyJWT
+pyjwt
+pydantic-settings
 apscheduler

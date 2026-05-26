@@ -1,137 +1,138 @@
-# Zeiterfassung – Schulanwesenheit Tracking
+# Zeiterfassung
 
-## Beschreibung
+Webanwendung zur Erfassung der **Schulanwesenheit** mit HTML, CSS und JavaScript im Frontend sowie einem Python-Backend mit FastAPI und SQLite. Die Anwendung unterstützt Registrierung, Login, Anwesenheitsmarkierung, Dashboard-Auswertung und eine automatische Abwesenheitsmarkierung für nicht erfasste Schüler.
 
-Webanwendung zur Erfassung der Anwesenheit in der Schule. Benutzer können sich einloggen, um ihre Anwesenheit zu markieren; wenn sie sich bis 12:00 Uhr nicht anmelden, markiert das System sie automatisch als abwesend.
+## Projektstatus
+
+Das Projekt befindet sich aktuell in einer **Übergangsphase von einer rein clientseitigen Lösung zu einer Client-Server-Architektur**. Im Repository sind weiterhin klassische Frontend-Dateien vorhanden, zusätzlich wurde zuletzt ein Python-Backend unter `backend/main.py` eingeführt. Die aktuelle Struktur zeigt damit klar, dass das Projekt aktiv weiterentwickelt wird und sich funktional zwischen lokalem Browserbetrieb und API-basierter Nutzung bewegt.
 
 ## Funktionen
 
-- Mehrbenutzer‑Authentifizierung: Jeder Benutzer hat ein eigenes Konto mit Benutzername und Passwort.
-- Automatische Anwesenheitsmarkierung: Beim Login wird die Anwesenheit automatisch mit Uhrzeit erfasst.
-- Auto‑Absent: Um 12:00 Uhr werden nicht eingeloggte Benutzer automatisch als abwesend markiert.
-- Vollständiges Dashboard:
-  - Heutiger Status (anwesend / abwesend)
-  - Monatskalender mit Farbkennzeichnung (grün = anwesend, rot = abwesend)
-  - Allgemeine Statistiken (Anwesenheitstage, Abwesenheitstage, Prozentwerte)
-  - Detaillierter Anwesenheitsverlauf
-- Export/Import: Sichern und Wiederherstellen der Daten im JSON‑Format.
-- Responsives Design: Funktioniert auf Desktop, Tablet und Smartphone.
+- Benutzerregistrierung
+- Benutzerlogin mit Passwortprüfung
+- JWT-basierte Authentifizierung im Backend
+- Erfassung der täglichen Anwesenheit beim Login
+- Dashboard mit Tagesstatus und Verlauf
+- Admin-Bereich
+- Setup-Seite für Erstkonfiguration
+- Automatische Abwesenheitsmarkierung per Scheduler
+- Speicherung der Daten in SQLite im Backend
+- Responsives Web-Frontend mit mehreren HTML-Oberflächen[ cite:1]
 
-## Installation und Nutzung
-
-### Schritt 1: Anwendung öffnen
-
-1. Lade den Ordner `Zeiterfassung` herunter.
-2. Öffne die Datei `index.html` in deinem Browser (Doppelklick auf die Datei).
-
-### Schritt 2: Konto erstellen
-
-1. Klicke auf „Registrieren“.
-2. Gib einen Benutzernamen und ein Passwort ein (Passwort mindestens 6 Zeichen).
-3. Klicke auf „Konto erstellen“.
-
-### Schritt 3: Anmelden
-
-1. Gib deinen Benutzernamen und dein Passwort ein.
-2. Klicke auf „Anmelden“.
-3. Beim Login wird die Anwesenheit automatisch für den aktuellen Tag markiert.
-
-### Schritt 4: Dashboard ansehen
-
-Nach dem Login siehst du:
-
-- Heutigen Status: Ob du anwesend oder abwesend bist.
-- Kalender: Grafische Übersicht der Anwesenheits‑/Abwesenheitstage.
-- Statistiken: Anzahl Anwesenheitstage, Abwesenheitstage und prozentuale Verteilung.
-- Verlauf: Tabelle mit Details zu jedem einzelnen Tag.
-
-## Wie funktioniert Auto‑Absent?
-
-- Vor 12:00 Uhr: Wenn du dich einloggst, wirst du als „anwesend“ markiert.
-- Um 12:00 Uhr und danach: Wenn du dich nicht eingeloggt hast, wirst du automatisch als „abwesend“ markiert.
-- Um 12:00 Uhr und danach: Wenn du dich einloggst, wirst du als „anwesend“ mit genauer Uhrzeit markiert.
-
-## Backup und Datenexport
-
-### Export (Sichern)
-
-1. Öffne im Dashboard den Bereich „Datensicherung“.
-2. Klicke auf „Daten exportieren (JSON)“.
-3. Eine JSON‑Datei mit deinen Daten wird heruntergeladen.
-
-### Import (Wiederherstellen)
-
-1. Klicke auf „Daten importieren (JSON)“.
-2. Wähle eine zuvor exportierte JSON‑Datei aus.
-3. Die Daten werden wiederhergestellt.
-
-## Ordnerstruktur
+## Projektstruktur
 
 ```text
 Zeiterfassung/
-├── index.html          # Login-Seite
-├── dashboard.html      # Hauptseite mit Statistiken
-├── styles.css          # CSS-Stile
-├── auth.js             # Logik für Authentifizierung
-├── app.js              # Logik für das Dashboard
-└── README.md           # Diese Datei
+├── README.md
+├── SECURITY_DOCUMENTATION.md
+├── START.html
+├── index.html
+├── dashboard.html
+├── admin.html
+├── setup.html
+├── styles.css
+├── config.js
+├── auth.js
+├── app.js
+├── admin.js
+├── setup.js
+└── backend/
+    ├── main.py
+    └── requirements.txt
 ```
 
-## Wo werden die Daten gespeichert?
+Die im Repository sichtbare Struktur umfasst Frontend-Dateien für Start, Login, Dashboard, Administration und Setup sowie einen `backend`-Ordner mit FastAPI-Anwendung und Abhängigkeiten. Im letzten Commit wurde insbesondere `backend/main.py` neu hinzugefügt und zentrale JavaScript-Dateien wurden umfangreich überarbeitet.
 
-Die Daten werden im **localStorage** des Browsers gespeichert:
+## Technologie-Stack
 
-- Benutzer und Passwörter: `localStorage.users`
-- Anwesenheit: `localStorage.attendance`
-- Eingeloggter Benutzer: `localStorage.currentUser`
+### Frontend
 
-Wichtig: Wenn du den Browserverlauf löschst, gehen die Daten verloren. Erstelle regelmäßig Backups.
+- HTML5
+- CSS3
+- JavaScript
+
+### Backend
+
+- Python
+- FastAPI
+- SQLite
+- Passlib mit bcrypt
+- PyJWT bzw. JWT-Verarbeitung
+- APScheduler[ cite:6]
+
+## Backend-Funktionen
+
+Das Backend definiert in `backend/main.py` eine FastAPI-Anwendung mit den zentralen Endpunkten `/register`, `/login`, `/dashboard` und `/checkout`. Zusätzlich werden Benutzer- und Anwesenheitsdaten in SQLite-Tabellen gespeichert, Passwörter mit bcrypt gehasht und Zugriffe auf geschützte Routen per Bearer-Token überprüft.
+
+Die automatische Abwesenheitsmarkierung wird durch einen `BackgroundScheduler` realisiert, der täglich um 12:00 Uhr einen Job ausführt. Dieser Job prüft alle Benutzer mit der Rolle `student` und legt für fehlende Tagesdatensätze automatisch einen Abwesenheitseintrag an.
+
+## Aktuelle Architektur
+
+Die aktuelle Codebasis zeigt zwei Entwicklungsrichtungen gleichzeitig:
+
+1. Eine bestehende browserbasierte Frontend-Struktur mit mehreren Seiten und JavaScript-Modulen.
+2. Ein neues API-basiertes Backend mit Datenbank, Passwort-Hashing und Token-Authentifizierung.
+
+Daraus folgt: Das Projekt sollte im README nicht mehr als reine `localStorage`-Anwendung beschrieben werden. Diese Beschreibung ist veraltet und stimmt nicht mehr mit dem zuletzt eingecheckten Backend überein.
+
+## Installation
+
+### Voraussetzungen
+
+- Python 3.10 oder neuer
+- Ein Browser für das Frontend
+- Pip zum Installieren der Python-Abhängigkeiten
+
+### Backend starten
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+Danach ist die API standardmäßig lokal verfügbar unter:
+
+```text
+http://127.0.0.1:8000
+```
+
+### Frontend starten
+
+Das Frontend kann über die vorhandenen HTML-Dateien geöffnet oder besser über einen lokalen Webserver bereitgestellt werden, damit API-Aufrufe sauber funktionieren. Als Einstiegspunkte dienen insbesondere `START.html`, `index.html` und `dashboard.html`.
+
+## API-Übersicht
+
+| Methode | Route | Beschreibung |
+|---|---|---|
+| POST | `/register` | Registriert einen neuen Benutzer. |
+| POST | `/login` | Authentifiziert einen Benutzer und liefert ein JWT zurück. |
+| GET | `/dashboard` | Liefert den Tagesstatus und die Anwesenheitshistorie des eingeloggten Benutzers. |
+| POST | `/checkout` | Trägt die Ausstempelzeit für den aktuellen Tag ein. |
 
 ## Sicherheit
 
-Hinweis zur Sicherheit:
+Die Anwendung verwendet Passwort-Hashing über `passlib` mit `bcrypt` sowie JWT für geschützte API-Zugriffe. Gleichzeitig enthält der aktuelle Backend-Code noch einen fest im Quelltext hinterlegten Platzhalter für den geheimen Schlüssel (`SECRET_KEY = "DEIN_SICHERER_SCHLUESSEL"`) und erlaubt CORS für alle Ursprünge (`allow_origins=["*"]`), weshalb die Sicherheitskonfiguration noch nicht produktionsreif ist.
 
-- Passwörter werden mit einem einfachen Hash‑Algorithmus gespeichert (nicht für den Produktionseinsatz geeignet).
-- Für persönlichen oder schulischen Gebrauch ist dies ausreichend.
-- Für ernsthaften produktiven Einsatz sollte eine Datenbank mit sicherer Authentifizierung (z.B. SSL, stärkeres Hashing, Server‑Backend) verwendet werden.
+Zusätzlich existiert im Repository eine separate Sicherheitsdokumentation unter `SECURITY_DOCUMENTATION.md`, was zeigt, dass Sicherheit bereits als eigener Arbeitsbereich behandelt wird.
 
-## Troubleshooting
+## Bekannte Punkte zur Überarbeitung
 
-### Problem: Ich kann mich nicht einloggen
+- README war bisher in Teilen auf die frühere `localStorage`-Architektur ausgerichtet und muss an das neue Backend angepasst werden.
+- Commit-Nachrichten sind derzeit nicht aussagekräftig genug für professionelle Nachvollziehbarkeit.
+- Die Architektur sollte im nächsten Schritt klar vereinheitlicht werden, damit Frontend und Backend dokumentativ konsistent sind.
+- Die Startanleitung sollte exakt an die tatsächlich vorhandenen Backend-Abhängigkeiten angepasst bleiben.
 
-Mögliche Ursache: Einige Browser sind bei lokal geöffneten Dateien streng im Umgang mit `localStorage`.
+## Roadmap
 
-Lösungen:
+Sinnvolle nächste Entwicklungsschritte auf Basis des aktuellen Zustands:
 
-- Chrome / Edge: Anwendung über einen lokalen Webserver ausführen.
-- Firefox: Kann in vielen Fällen auch direkt über die Datei funktionieren.
+- Frontend vollständig an die neue API anbinden
+- Rollen- und Rechtekonzept für Admin und Schüler weiter ausbauen
+- Sichere Konfigurationswerte per Umgebungsvariablen auslagern
+- CORS restriktiv konfigurieren
+- Tests für Authentifizierung und Anwesenheitslogik ergänzen
+- Deployment-Dokumentation ergänzen
+- Datenmodell und Fehlerbehandlung erweitern
 
-### Problem: Mehrere Personen im Netzwerk sollen die Anwendung nutzen
-
-Lösung: Die Anwendung auf einen Webserver (Apache, Nginx usw.) verschieben oder Plattformen wie Replit verwenden.
-
-### Problem: Meine Daten sind verschwunden
-
-Lösung: Erstelle regelmäßig ein Backup. Verwende dazu den Button „Daten exportieren“.
-
-## Roadmap (geplante Funktionen)
-
-- Synchronisation der Daten in der Cloud.
-- Benachrichtigungen um 11:55 Uhr vor Auto‑Absent.
-- PDF‑Berichte.
-- Design‑Themen (z.B. Hell/Dunkel‑Modus).
-- Mehrsprachige Unterstützung.
-
-## Support
-
-Wenn du Probleme hast:
-
-1. Prüfe Fehlermeldungen in der Browser‑Konsole (F12 → „Console“).
-2. Stelle sicher, dass `localStorage` im Browser nicht deaktiviert ist.
-3. Probiere einen anderen Browser aus.
-
----
-
-**Erstellt:** 2026‑03‑17  
-**Lizenz:** MIT (freie Nutzung)  
-**Entwickelt für:** School Attendance Tracking
+## Lizenz

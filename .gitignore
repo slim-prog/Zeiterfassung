@@ -1,0 +1,37 @@
+# Python Backend
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/.env
+backend/venv/
+backend/env/
+*.egg-info/
+dist/
+build/
+
+# Node / npm (falls zukünftig verwendet)
+node_modules/
+npm-debug.log*
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / Editor
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# Sensitive Konfiguration
+.env
+.env.local
+secrets.json
+
+# Logs
+*.log
+
+# Temporäre Dateien
+*.tmp
+*.bak
