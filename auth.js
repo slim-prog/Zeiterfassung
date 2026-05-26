@@ -3,7 +3,7 @@
 
     // ─────────────────────────────────────────────
     // SHA-256 Hashes der Standard-Passwörter:
-    //   admin123   → 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a
+    //   admin123   → 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
     //   student123 → ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f
     // ─────────────────────────────────────────────
 
@@ -18,7 +18,7 @@
         {
             id: 1,
             username: "admin",
-            passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a",
+            passwordHash: "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
             role: "admin",
             createdAt: "2025-01-01T08:00:00.000Z",
             lastLogin: null
