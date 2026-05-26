@@ -60,18 +60,13 @@
         const users = auth.getUsers();
         const attendance = auth.getAttendance();
         const currentUser = auth.getCurrentUser();
-
         const usersTableBody = document.getElementById("usersTableBody");
         if (!usersTableBody) return;
 
         usersTableBody.innerHTML = "";
 
         if (!users.length) {
-            usersTableBody.innerHTML = `
-                <tr>
-                    <td colspan="6">Keine Benutzer vorhanden.</td>
-                </tr>
-            `;
+            usersTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #999;">Keine Benutzer vorhanden.</td></tr>`;
             return;
         }
 
@@ -100,33 +95,28 @@
 
             const canEdit = currentUser && currentUser.username !== user.username;
 
-            let actionButtons = `<span style="color:#666; font-size:12px;">Keine Aktion</span>`;
+            let actionButtons = `<span style="color: #999; font-size: 12px;">Keine Aktion</span>`;
 
             if (canEdit) {
-                const safeUsername = String(user.username).replace(/'/g, "\\'");
+                const safeUsername = String(user.username)
+                    .replace(/&/g, "&amp;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
                 const roleLabel = user.role === "admin" ? "Zu Student" : "Zu Admin";
 
                 actionButtons = `
-                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                        <button onclick="toggleUserRole('${safeUsername}')" class="btn-secondary" style="padding:6px 10px; font-size:12px;">
-                            ${roleLabel}
-                        </button>
-                        <button onclick="resetPasswordPrompt('${safeUsername}')" class="btn-export" style="padding:6px 10px; font-size:12px;">
-                            Passwort reset
-                        </button>
-                        <button onclick="deleteUser('${safeUsername}')" class="btn-danger" style="padding:6px 10px; font-size:12px;">
-                            Löschen
-                        </button>
-                    </div>
-                `;
+                    <button class="btn-action btn-demote" onclick="toggleUserRole(\`{safeUsername}\`)">{roleLabel}</button>
+                    <button class="btn-action btn-password" onclick="resetPasswordPrompt(\`{safeUsername}\`)">Passwort reset</button>
+                    <button class="btn-action btn-delete" onclick="deleteUser(\`{safeUsername}\`)">Löschen</button>
+                    `;
             }
 
-            const roleBadgeClass = user.role === "admin" ? "present" : "absent";
+            const roleBadgeClass = user.role === "admin" ? "role-admin" : "role-student";
             const roleLabelText = user.role === "admin" ? "Admin" : "Student";
 
             tr.innerHTML = `
                 <td>${escapeHtml(user.username)}</td>
-                <td><span class="badge ${roleBadgeClass}">${roleLabelText}</span></td>
+                <td><span class="role-badge ${roleBadgeClass}">${roleLabelText}</span></td>
                 <td>${presentDays}</td>
                 <td>${createdAt}</td>
                 <td>${lastLogin}</td>
@@ -162,7 +152,10 @@
         renderAdminDashboard();
     }
 
-    function resetPasswordPrompt(username) {
+    // ─────────────────────────────────────────────
+    // PRIORITÄT 1: PASSWORT-RESET MIT SHA-256-HASHING
+    // ─────────────────────────────────────────────
+    async function resetPasswordPrompt(username) {
         const auth = getAuth();
         const currentUser = auth.getCurrentUser();
 
@@ -175,27 +168,38 @@
         if (newPassword === null) return;
 
         const cleanPassword = newPassword.trim();
-
         if (cleanPassword.length < 4) {
             alert("Das Passwort muss mindestens 4 Zeichen haben.");
             return;
         }
 
+        // SHA-256 Hash des neuen Passworts über window.Auth.hashPassword
+        const passwordHash = await auth.hashPassword(cleanPassword);
+        if (!passwordHash) {
+            alert("Interner Fehler beim Passwort-Hashing.");
+            return;
+        }
+
         const users = auth.getUsers();
         const index = users.findIndex((user) => user.username === username);
-
         if (index === -1) {
             alert("Benutzer nicht gefunden.");
             return;
         }
 
+        // PasswortHash setzen, altes Klartext-Passwort entfernen
         users[index] = {
             ...users[index],
-            password: cleanPassword
+            passwordHash: passwordHash
         };
 
+        // Altes Klartext-Feld explizit entfernen (falls vorhanden)
+        if (users[index].password) {
+            delete users[index].password;
+        }
+
         auth.saveUsers(users);
-        alert(`Passwort für ${username} wurde aktualisiert.`);
+        alert(`Passwort für ${username} wurde sicher aktualisiert (SHA-256).`);
         renderUsersTable();
     }
 
@@ -219,7 +223,6 @@
 
         auth.saveUsers(filteredUsers);
         auth.saveAttendance(filteredAttendance);
-
         renderAdminDashboard();
     }
 
@@ -256,14 +259,12 @@
     function downloadFile(filename, content, mimeType) {
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
-
         const link = document.createElement("a");
         link.href = url;
         link.download = filename;
         document.body.appendChild(link);
         link.click();
         link.remove();
-
         URL.revokeObjectURL(url);
     }
 
@@ -282,13 +283,11 @@
                 users: users.map((user) => auth.sanitizeUser(user)),
                 attendance
             };
-
             downloadFile(
                 `zeiterfassung-export-${exportDate}.json`,
                 JSON.stringify(exportPayload, null, 2),
                 "application/json"
             );
-
             return;
         }
 
@@ -310,6 +309,9 @@
         );
     }
 
+    // ─────────────────────────────────────────────
+    // PRIORITÄT 3: TAGESBERICHT INKL. VERSPÄTET
+    // ─────────────────────────────────────────────
     function generateDailyReport() {
         const attendance = getFilteredAttendanceForExport();
         if (!attendance) return;
@@ -320,17 +322,26 @@
         }
 
         const total = attendance.length;
-        const present = attendance.filter((entry) => entry.status === "present").length;
+        // Inkludiert "present" UND "Verspätet" als anwesend gezählt
+        const present = attendance.filter((entry) =>
+            entry.status === "present" || entry.status === "Verspätet"
+        ).length;
         const late = attendance.filter((entry) => entry.status === "Verspätet").length;
         const absent = attendance.filter((entry) => entry.status === "Abwesend").length;
+
+        const presentRate = total > 0 ? Math.round((present / total) * 100) : 0;
+        const absentRate = total > 0 ? Math.round((absent / total) * 100) : 0;
 
         const lines = [
             "Tagesbericht / Auswahlbericht",
             "----------------------------------------",
             `Datensätze gesamt: ${total}`,
-            `Anwesend: ${present}`,
+            `Anwesend (inkl. Verspätet): ${present}`,
             `Verspätet: ${late}`,
-            `Abwesend: ${absent}`
+            `Abwesend: ${absent}`,
+            "----------------------------------------",
+            `Anwesenheitsrate: ${presentRate}%`,
+            `Abwesenheitsrate: ${absentRate}%`
         ];
 
         alert(lines.join("\n"));
@@ -341,7 +352,9 @@
         const settings = auth.getSettings();
         const retentionDays = Number(settings.retentionDays) || 90;
 
-        const confirmed = confirm(`Sollen alle Datensätze gelöscht werden, die älter als ${retentionDays} Tage sind?`);
+        const confirmed = confirm(
+            `Sollen alle Datensätze gelöscht werden, die älter als ${retentionDays} Tage sind?`
+        );
         if (!confirmed) return;
 
         auth.cleanupOldAttendance();
@@ -356,7 +369,6 @@
         if (!specificOption || !exportDateInput) return;
 
         exportDateInput.disabled = !specificOption.checked;
-
         if (!specificOption.checked) {
             exportDateInput.value = "";
         }
@@ -373,12 +385,19 @@
 
     function csvEscape(value) {
         const stringValue = String(value ?? "");
-        if (stringValue.includes(";") || stringValue.includes('"') || stringValue.includes("\n")) {
+        if (
+            stringValue.includes(";") ||
+            stringValue.includes('"') ||
+            stringValue.includes("\n")
+        ) {
             return `"${stringValue.replace(/"/g, '""')}"`;
         }
         return stringValue;
     }
 
+    // ─────────────────────────────────────────────
+    // EVENT HANDLER EXPORTIEREN
+    // ─────────────────────────────────────────────
     window.toggleUserRole = toggleUserRole;
     window.resetPasswordPrompt = resetPasswordPrompt;
     window.deleteUser = deleteUser;

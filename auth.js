@@ -419,13 +419,12 @@
         }
         return currentUser;
     }
-
     function requireStudent() {
         const currentUser = requireAuth();
         if (!currentUser) return null;
 
         if (currentUser.role !== "student") {
-            window.location.href = "admin.html";
+            window.location.href = "admin.html";  // redirect imediat!
             return null;
         }
         return currentUser;

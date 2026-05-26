@@ -1,0 +1,46 @@
+# Python backend
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.venv/
+venv/
+env/
+ENV/
+
+# Baza de date SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Variabile de mediu — NICIODATA in git
+.env
+.env.*
+!.env.example
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Node (daca se adauga ulterior)
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Distribuire
+*.zip
+*.tar.gz

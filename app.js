@@ -1,6 +1,7 @@
 (function () {
     "use strict";
 
+    const TOTAL_SCHOOL_DAYS = 263;
     let currentDate = new Date();
 
     function getAuth() {
@@ -26,7 +27,6 @@
     function getUserAttendanceHistory(username) {
         const auth = getAuth();
         const attendance = auth.getAttendance();
-
         return attendance
             .filter((entry) => entry.username === username)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -49,31 +49,30 @@
         if (!todayRecord) {
             statusDiv.classList.add("absent");
             statusDiv.innerHTML = `
-                <h3 style="margin-bottom: 10px;">✗ Kein Eintrag</h3>
-                <p style="font-size: 14px;">Für heute existiert noch kein Eintrag.</p>
+                <h3 style="margin-bottom: 10px;">&#x2717; Kein Eintrag</h3>
+                <p style="font-size: 14px;">Fur heute existiert noch kein Eintrag.</p>
             `;
             return;
         }
 
         const isPresent = todayRecord.status === "present";
-        const isLate = todayRecord.status === "Verspätet";
+        const isLate = todayRecord.status === "Verspaetet";
         const isAbsent = todayRecord.status === "Abwesend";
-
         const canCheckout = (isPresent || isLate) && !todayRecord.logoutTime;
 
         const checkoutHtml = canCheckout
-            ? `<button onclick="handleCheckout()" style="margin-top: 10px; padding: 6px 12px; background: transparent; color: #dc3545; border: 1px solid #dc3545; border-radius: 4px; cursor: pointer; font-size: 13px;">Gehen / Ausstempeln</button>`
+            ? `<button onclick="handleCheckout()" style="margin-top:10px;padding:6px 12px;background:transparent;color:#dc3545;border:1px solid #dc3545;border-radius:4px;cursor:pointer;font-size:13px;">Gehen / Ausstempeln</button>`
             : "";
 
         const logoutText = todayRecord.logoutTime
-            ? `<p style="font-size: 14px; margin-top: 5px;">Gehen: ${todayRecord.logoutTime}</p>`
+            ? `<p style="font-size:14px;margin-top:5px;">Gehen: ${todayRecord.logoutTime}</p>`
             : "";
 
         if (isPresent) {
             statusDiv.classList.add("present");
             statusDiv.innerHTML = `
-                <h3 style="margin-bottom: 10px;">✓ Anwesend</h3>
-                <p style="font-size: 14px;">Ankunft: ${todayRecord.loginTime || "N/A"}</p>
+                <h3 style="margin-bottom:10px;">&#x2713; Anwesend</h3>
+                <p style="font-size:14px;">Ankunft: ${todayRecord.loginTime || "N/A"}</p>
                 ${logoutText}
                 ${checkoutHtml}
             `;
@@ -85,8 +84,8 @@
             statusDiv.style.borderLeft = "4px solid #ffc107";
             statusDiv.style.color = "#856404";
             statusDiv.innerHTML = `
-                <h3 style="margin-bottom: 10px;">⚠️ Verspätet</h3>
-                <p style="font-size: 14px;">Ankunft: ${todayRecord.loginTime || "N/A"}</p>
+                <h3 style="margin-bottom:10px;">Verspaetet</h3>
+                <p style="font-size:14px;">Ankunft: ${todayRecord.loginTime || "N/A"}</p>
                 ${logoutText}
                 ${checkoutHtml}
             `;
@@ -96,40 +95,49 @@
         if (isAbsent) {
             statusDiv.classList.add("absent");
             statusDiv.innerHTML = `
-                <h3 style="margin-bottom: 10px;">✗ Abwesend</h3>
-                <p style="font-size: 14px;">Datum: ${todayRecord.date}</p>
+                <h3 style="margin-bottom:10px;">&#x2717; Abwesend</h3>
+                <p style="font-size:14px;">Datum: ${todayRecord.date}</p>
             `;
             return;
         }
 
         statusDiv.innerHTML = `
-            <h3 style="margin-bottom: 10px;">?</h3>
-            <p style="font-size: 14px;">Unbekannter Status: ${todayRecord.status}</p>
+            <h3 style="margin-bottom:10px;">?</h3>
+            <p style="font-size:14px;">Unbekannter Status: ${todayRecord.status}</p>
         `;
     }
 
+    // FIX: procentul se calculeaza din TOTAL_SCHOOL_DAYS, nu din history.length
     function renderStatistics(history) {
         const presentDays = history.filter(
-            (entry) => entry.status === "present" || entry.status === "Verspätet"
+            (entry) => entry.status === "present" || entry.status === "Verspaetet"
         ).length;
 
         const absentDays = history.filter(
             (entry) => entry.status === "Abwesend"
         ).length;
 
-        const totalDays = history.length;
-        const presentRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
-        const absentRate = totalDays > 0 ? Math.round((absentDays / totalDays) * 100) : 0;
+        const presentRate = Math.round((presentDays / TOTAL_SCHOOL_DAYS) * 100);
+        const absentRate = Math.round((absentDays / TOTAL_SCHOOL_DAYS) * 100);
+        const remainingNeeded = Math.max(0, 134 - presentDays);
 
         const presentDaysEl = document.getElementById("presentDays");
         const absentDaysEl = document.getElementById("absentDays");
         const presentRateEl = document.getElementById("presentRate");
         const absentRateEl = document.getElementById("absentRate");
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
 
         if (presentDaysEl) presentDaysEl.textContent = String(presentDays);
         if (absentDaysEl) absentDaysEl.textContent = String(absentDays);
         if (presentRateEl) presentRateEl.textContent = `${presentRate}%`;
         if (absentRateEl) absentRateEl.textContent = `${absentRate}%`;
+        if (progressFill) progressFill.style.width = `${Math.min(presentRate, 100)}%`;
+        if (progressText) {
+            progressText.textContent = remainingNeeded > 0
+                ? `Noch ${remainingNeeded} Tage benoetigt (Ziel: 134 / ${TOTAL_SCHOOL_DAYS})`
+                : `Mindestanforderung erfullt (${presentDays} / ${TOTAL_SCHOOL_DAYS} Tage)`;
+        }
     }
 
     function renderHistoryTable(history) {
@@ -138,37 +146,29 @@
             document.getElementById("historyBody");
 
         if (!tbody) return;
-
         tbody.innerHTML = "";
 
         if (!history.length) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4">Keine Daten vorhanden.</td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="4">Keine Daten vorhanden.</td></tr>`;
             return;
         }
 
         history.forEach((record) => {
             const tr = document.createElement("tr");
-
             let statusBadge = "";
             if (record.status === "present") {
                 statusBadge = `<span class="badge present">Anwesend</span>`;
-            } else if (record.status === "Verspätet") {
-                statusBadge = `<span class="badge" style="background: #ffc107; color: #000;">Verspätet</span>`;
+            } else if (record.status === "Verspaetet") {
+                statusBadge = `<span class="badge" style="background:#ffc107;color:#000;">Verspaetet</span>`;
             } else {
                 statusBadge = `<span class="badge absent">Abwesend</span>`;
             }
-
             tr.innerHTML = `
                 <td>${record.date || "-"}</td>
                 <td>${statusBadge}</td>
                 <td>${record.loginTime || "-"}</td>
                 <td>${record.logoutTime || "-"}</td>
             `;
-
             tbody.appendChild(tr);
         });
     }
@@ -176,7 +176,6 @@
     function renderCalendar(history) {
         const calendarBody = document.getElementById("calendarBody");
         const currentMonthEl = document.getElementById("currentMonth");
-
         if (!calendarBody || !currentMonthEl) return;
 
         const year = currentDate.getFullYear();
@@ -191,14 +190,11 @@
 
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-
         const normalizedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
 
         const historyMap = new Map();
         history.forEach((item) => {
-            if (item.date) {
-                historyMap.set(item.date, item);
-            }
+            if (item.date) historyMap.set(item.date, item);
         });
 
         let row = document.createElement("tr");
@@ -220,13 +216,9 @@
             const record = historyMap.get(dateStr);
 
             if (record) {
-                if (record.status === "present") {
-                    td.classList.add("calendar-present");
-                } else if (record.status === "Verspätet") {
-                    td.classList.add("calendar-late");
-                } else if (record.status === "Abwesend") {
-                    td.classList.add("calendar-absent");
-                }
+                if (record.status === "present") td.classList.add("calendar-present");
+                else if (record.status === "Verspaetet") td.classList.add("calendar-late");
+                else if (record.status === "Abwesend") td.classList.add("calendar-absent");
             }
 
             row.appendChild(td);
@@ -242,7 +234,6 @@
     function renderDashboard(user) {
         const history = getUserAttendanceHistory(user.username);
         const todayRecord = getTodayRecord(user.username);
-
         renderTodayStatus(todayRecord);
         renderStatistics(history);
         renderHistoryTable(history);
@@ -252,7 +243,6 @@
     function checkoutCurrentUser() {
         const auth = getAuth();
         const user = auth.getCurrentUser();
-
         if (!user) {
             window.location.href = "index.html";
             return false;
@@ -270,7 +260,7 @@
         );
 
         if (index === -1) {
-            alert("Für heute ist kein offener Anwesenheitseintrag vorhanden.");
+            alert("Fur heute ist kein offener Anwesenheitseintrag vorhanden.");
             return false;
         }
 
@@ -283,12 +273,26 @@
         return true;
     }
 
+    // FIX PRINCIPAL: initDashboard verifica explicit daca utilizatorul exista
+    // inainte de a randa orice continut
     function initDashboard() {
-        const user = getCurrentUserOrRedirect();
-        if (!user) return;
+        const auth = getAuth();
 
-        setCurrentUserLabel(user);
-        renderDashboard(user);
+        // Verificare directa fara redirect automat
+        const currentUser = auth.getCurrentUser();
+
+        if (!currentUser) {
+            window.location.href = "index.html";
+            return;
+        }
+
+        if (currentUser.role !== "student") {
+            window.location.href = "admin.html";
+            return;
+        }
+
+        setCurrentUserLabel(currentUser);
+        renderDashboard(currentUser);
     }
 
     function previousMonth() {
@@ -296,7 +300,6 @@
         const auth = getAuth();
         const user = auth.getCurrentUser();
         if (!user) return;
-
         const history = getUserAttendanceHistory(user.username);
         renderCalendar(history);
     }
@@ -306,7 +309,6 @@
         const auth = getAuth();
         const user = auth.getCurrentUser();
         if (!user) return;
-
         const history = getUserAttendanceHistory(user.username);
         renderCalendar(history);
     }
@@ -314,17 +316,59 @@
     function handleCheckout() {
         const success = checkoutCurrentUser();
         if (!success) return;
-
         const auth = getAuth();
         const user = auth.getCurrentUser();
         if (!user) return;
-
         renderDashboard(user);
+    }
+
+    function exportData() {
+        const auth = getAuth();
+        const user = auth.getCurrentUser();
+        if (!user) return;
+        const history = getUserAttendanceHistory(user.username);
+        const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Zeiterfassung_${user.username}_${auth.getTodayDateString()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (!Array.isArray(imported)) {
+                    alert("Ungultiges Format. Erwartet wird ein JSON-Array.");
+                    return;
+                }
+                const auth = getAuth();
+                const user = auth.getCurrentUser();
+                if (!user) return;
+                const existing = auth.getAttendance().filter(
+                    (entry) => entry.username !== user.username
+                );
+                auth.saveAttendance([...existing, ...imported]);
+                renderDashboard(user);
+                alert("Import erfolgreich.");
+            } catch {
+                alert("Fehler beim Importieren der Datei.");
+            }
+        };
+        reader.readAsText(file);
     }
 
     window.previousMonth = previousMonth;
     window.nextMonth = nextMonth;
     window.handleCheckout = handleCheckout;
+    window.exportData = exportData;
+    window.importData = importData;
 
-    window.addEventListener("load", initDashboard);
+    // Folosim DOMContentLoaded in loc de "load" pentru a preveni flash-ul de continut
+    document.addEventListener("DOMContentLoaded", initDashboard);
 })();
