@@ -156,6 +156,13 @@ body.dashboard-page {
     min-height: auto;
 }
 
+/* ===== ADMIN PANEL ===== */
+body.admin-page {
+    background: #f5f7fa;
+    display: block;
+    min-height: auto;
+}
+
 .dashboard-container {
     min-height: 100vh;
 }
